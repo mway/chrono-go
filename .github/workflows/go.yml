@@ -1,4 +1,4 @@
-name: Go Build & Test
+name: Go
 
 on:
   push:
@@ -29,4 +29,3 @@ jobs:
 
     - name: Upload Coverage
       uses: codecov/codecov-action@v3.0.0
-
