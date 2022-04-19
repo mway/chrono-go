@@ -32,6 +32,41 @@ import (
 )
 
 func TestThrottledClock(t *testing.T) {
+	cases := []struct {
+		name    string
+		clockFn func(time.Duration) *chrono.ThrottledClock
+	}{
+		{
+			name: "mono",
+			clockFn: func(d time.Duration) *chrono.ThrottledClock {
+				return chrono.NewThrottledMonotonicClock(d)
+			},
+		},
+		{
+			name: "wall",
+			clockFn: func(d time.Duration) *chrono.ThrottledClock {
+				return chrono.NewThrottledMonotonicClock(d)
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				clock     = tt.clockFn(time.Millisecond)
+				prevNanos = clock.Nanos()
+				prevTime  = clock.Now()
+			)
+
+			waitForChange(t, clock, prevNanos)
+
+			require.True(t, clock.Nanos() > prevNanos, "nanos did not increase")
+			require.True(t, clock.Now().After(prevTime), "time did not increase")
+		})
+	}
+}
+
+func TestThrottledClockInternals(t *testing.T) {
 	var (
 		now   = atomic.NewInt64(123)
 		nowfn = func() int64 {
