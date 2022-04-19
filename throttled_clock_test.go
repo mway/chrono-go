@@ -45,7 +45,7 @@ func TestThrottledClock(t *testing.T) {
 		{
 			name: "wall",
 			clockFn: func(d time.Duration) *chrono.ThrottledClock {
-				return chrono.NewThrottledMonotonicClock(d)
+				return chrono.NewThrottledWallClock(d)
 			},
 		},
 	}
