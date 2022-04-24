@@ -65,7 +65,7 @@ func BenchmarkThrottledClock(b *testing.B) {
 					b.ResetTimer()
 
 					for i := 0; i < b.N; i++ {
-						nanos = clock.Nanos()
+						nanos = clock.Nanotime()
 					}
 				})
 			}
@@ -89,7 +89,7 @@ func BenchmarkThrottledClockSources(b *testing.B) {
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			nanos = clock.Nanos()
+			nanos = clock.Nanotime()
 		}
 	})
 

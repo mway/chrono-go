@@ -54,13 +54,13 @@ func TestThrottledClock(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				clock     = tt.clockFn(time.Millisecond)
-				prevNanos = clock.Nanos()
+				prevNanos = clock.Nanotime()
 				prevTime  = clock.Now()
 			)
 
 			waitForChange(t, clock, prevNanos)
 
-			require.True(t, clock.Nanos() > prevNanos, "nanos did not increase")
+			require.True(t, clock.Nanotime() > prevNanos, "nanotime did not increase")
 			require.True(t, clock.Now().After(prevTime), "time did not increase")
 		})
 	}
@@ -77,21 +77,21 @@ func TestThrottledClockInternals(t *testing.T) {
 	clock := chrono.NewThrottledClock(nowfn, time.Microsecond)
 	defer clock.Stop()
 
-	require.Equal(t, now.Load(), clock.Nanos())
+	require.Equal(t, now.Load(), clock.Nanotime())
 	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
 
 	prev := now.Load()
 	now.Store(456)
 	waitForChange(t, clock, prev)
 
-	require.Equal(t, now.Load(), clock.Nanos())
+	require.Equal(t, now.Load(), clock.Nanotime())
 	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
 
 	prev = now.Load()
 	now.Store(1)
 	waitForChange(t, clock, prev)
 
-	require.Equal(t, now.Load(), clock.Nanos())
+	require.Equal(t, now.Load(), clock.Nanotime())
 	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
 
 	clock.Stop()
@@ -101,7 +101,7 @@ func TestThrottledClockInternals(t *testing.T) {
 
 	// The clock should no longer update once it is stopped.
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, prev, clock.Nanos())
+	require.Equal(t, prev, clock.Nanotime())
 }
 
 func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
@@ -113,7 +113,7 @@ func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
 	go func() {
 		defer close(done)
 
-		for !stop.Load() && clock.Nanos() == prev {
+		for !stop.Load() && clock.Nanotime() == prev {
 			time.Sleep(clock.Interval() / 2)
 			runtime.Gosched()
 		}
@@ -127,5 +127,5 @@ func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
 	}
 
 	<-done
-	require.NotEqual(t, prev, clock.Nanos(), "clock did not update")
+	require.NotEqual(t, prev, clock.Nanotime(), "clock did not update")
 }

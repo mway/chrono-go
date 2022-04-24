@@ -93,8 +93,8 @@ func (c *ThrottledClock) Interval() time.Duration {
 	return c.interval
 }
 
-// Nanos returns the current time as integer nanoseconds.
-func (c *ThrottledClock) Nanos() int64 {
+// Nanotime returns the current time as integer nanoseconds.
+func (c *ThrottledClock) Nanotime() int64 {
 	return c.now.Load()
 }
 
