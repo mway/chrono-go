@@ -124,6 +124,34 @@ func TestNewClockResultingClock(t *testing.T) {
 	}
 }
 
+func TestSpecializedClockConstructors(t *testing.T) {
+	cases := []struct {
+		name  string
+		clock clock.Clock
+	}{
+		{
+			name:  "monotonic",
+			clock: clock.NewMonotonicClock(),
+		},
+		{
+			name:  "wall",
+			clock: clock.NewWallClock(),
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			cur := tt.clock.Nanotime()
+			for i := 0; i < 100; i++ {
+				time.Sleep(time.Millisecond)
+				now := tt.clock.Nanotime()
+				require.Greater(t, now, cur)
+				cur = now
+			}
+		})
+	}
+}
+
 func TestClockNewTimer(t *testing.T) {
 	cases := []struct {
 		name string

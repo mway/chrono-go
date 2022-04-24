@@ -57,3 +57,17 @@ func NewClock(opts ...Option) (Clock, error) {
 
 	return newWallClock(options.TimeFunc), nil
 }
+
+// NewMonotonicClock returns a new monotonic Clock.
+func NewMonotonicClock() Clock {
+	//nolint:errcheck
+	clk, _ := NewClock(WithNanotimeFunc(DefaultNanotimeFunc()))
+	return clk
+}
+
+// NewWallClock returns a new wall Clock.
+func NewWallClock() Clock {
+	//nolint:errcheck
+	clk, _ := NewClock(WithTimeFunc(DefaultTimeFunc()))
+	return clk
+}
