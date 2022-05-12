@@ -18,28 +18,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package chrono_test
+package clock_test
 
 import (
 	"testing"
 	"time"
 
-	"go.mway.dev/chrono"
+	"go.mway.dev/chrono/clock"
 )
 
 func BenchmarkThrottledClock(b *testing.B) {
 	var (
 		cases = []struct {
 			name  string
-			nowfn chrono.NanoFunc
+			nowfn clock.NanoFunc
 		}{
 			{
 				name:  "mono",
-				nowfn: chrono.NewMonotonicNanoFunc(),
+				nowfn: clock.NewMonotonicNanoFunc(),
 			},
 			{
 				name:  "wall",
-				nowfn: chrono.NewWallNanoFunc(),
+				nowfn: clock.NewWallNanoFunc(),
 			},
 		}
 		intervals = []time.Duration{
@@ -58,14 +58,14 @@ func BenchmarkThrottledClock(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			for _, dur := range intervals {
 				b.Run(dur.String(), func(b *testing.B) {
-					clock := chrono.NewThrottledClock(tt.nowfn, dur)
-					defer clock.Stop()
+					clk := clock.NewThrottledClock(tt.nowfn, dur)
+					defer clk.Stop()
 
 					b.ReportAllocs()
 					b.ResetTimer()
 
 					for i := 0; i < b.N; i++ {
-						nanos = clock.Nanotime()
+						nanos = clk.Nanotime()
 					}
 				})
 			}
@@ -82,26 +82,26 @@ func BenchmarkThrottledClockSources(b *testing.B) {
 	)
 
 	b.Run("nanos", func(b *testing.B) {
-		clock := chrono.NewThrottledMonotonicClock(time.Microsecond)
-		defer clock.Stop()
+		clk := clock.NewThrottledMonotonicClock(time.Microsecond)
+		defer clk.Stop()
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			nanos = clock.Nanotime()
+			nanos = clk.Nanotime()
 		}
 	})
 
 	b.Run("now", func(b *testing.B) {
-		clock := chrono.NewThrottledMonotonicClock(time.Microsecond)
-		defer clock.Stop()
+		clk := clock.NewThrottledMonotonicClock(time.Microsecond)
+		defer clk.Stop()
 
 		b.ReportAllocs()
 		b.ResetTimer()
 
 		for i := 0; i < b.N; i++ {
-			now = clock.Now()
+			now = clk.Now()
 		}
 	})
 

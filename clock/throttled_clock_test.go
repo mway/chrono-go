@@ -18,7 +18,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package chrono_test
+package clock_test
 
 import (
 	"runtime"
@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.mway.dev/chrono"
+	"go.mway.dev/chrono/clock"
 	"go.mway.dev/math"
 	"go.uber.org/atomic"
 )
@@ -34,18 +34,18 @@ import (
 func TestThrottledClock(t *testing.T) {
 	cases := []struct {
 		name    string
-		clockFn func(time.Duration) *chrono.ThrottledClock
+		clockFn func(time.Duration) *clock.ThrottledClock
 	}{
 		{
 			name: "mono",
-			clockFn: func(d time.Duration) *chrono.ThrottledClock {
-				return chrono.NewThrottledMonotonicClock(d)
+			clockFn: func(d time.Duration) *clock.ThrottledClock {
+				return clock.NewThrottledMonotonicClock(d)
 			},
 		},
 		{
 			name: "wall",
-			clockFn: func(d time.Duration) *chrono.ThrottledClock {
-				return chrono.NewThrottledWallClock(d)
+			clockFn: func(d time.Duration) *clock.ThrottledClock {
+				return clock.NewThrottledWallClock(d)
 			},
 		},
 	}
@@ -74,37 +74,37 @@ func TestThrottledClockInternals(t *testing.T) {
 		}
 	)
 
-	clock := chrono.NewThrottledClock(nowfn, time.Microsecond)
-	defer clock.Stop()
+	clk := clock.NewThrottledClock(nowfn, time.Microsecond)
+	defer clk.Stop()
 
-	require.Equal(t, now.Load(), clock.Nanotime())
-	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
+	require.Equal(t, now.Load(), clk.Nanotime())
+	require.True(t, clk.Now().Equal(time.Unix(0, now.Load())))
 
 	prev := now.Load()
 	now.Store(456)
-	waitForChange(t, clock, prev)
+	waitForChange(t, clk, prev)
 
-	require.Equal(t, now.Load(), clock.Nanotime())
-	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
+	require.Equal(t, now.Load(), clk.Nanotime())
+	require.True(t, clk.Now().Equal(time.Unix(0, now.Load())))
 
 	prev = now.Load()
 	now.Store(1)
-	waitForChange(t, clock, prev)
+	waitForChange(t, clk, prev)
 
-	require.Equal(t, now.Load(), clock.Nanotime())
-	require.True(t, clock.Now().Equal(time.Unix(0, now.Load())))
+	require.Equal(t, now.Load(), clk.Nanotime())
+	require.True(t, clk.Now().Equal(time.Unix(0, now.Load())))
 
-	clock.Stop()
+	clk.Stop()
 
 	prev = now.Load()
 	now.Store(1)
 
 	// The clock should no longer update once it is stopped.
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, prev, clock.Nanotime())
+	require.Equal(t, prev, clk.Nanotime())
 }
 
-func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
+func waitForChange(t *testing.T, clk *clock.ThrottledClock, prev int64) {
 	var (
 		done = make(chan struct{})
 		stop atomic.Bool
@@ -113,13 +113,13 @@ func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
 	go func() {
 		defer close(done)
 
-		for !stop.Load() && clock.Nanotime() == prev {
-			time.Sleep(clock.Interval() / 2)
+		for !stop.Load() && clk.Nanotime() == prev {
+			time.Sleep(clk.Interval() / 2)
 			runtime.Gosched()
 		}
 	}()
 
-	wait := math.Max(time.Second, 2*clock.Interval())
+	wait := math.Max(time.Second, 2*clk.Interval())
 	select {
 	case <-time.After(wait):
 		stop.Store(true)
@@ -127,5 +127,5 @@ func waitForChange(t *testing.T, clock *chrono.ThrottledClock, prev int64) {
 	}
 
 	<-done
-	require.NotEqual(t, prev, clock.Nanotime(), "clock did not update")
+	require.NotEqual(t, prev, clk.Nanotime(), "clock did not update")
 }

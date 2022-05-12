@@ -19,13 +19,16 @@
 // IN THE THE SOFTWARE.
 
 // Package chrono provides time-related types and utilities.
-package chrono
+package clock
 
 import (
 	"time"
 
+	"go.mway.dev/chrono"
 	"go.uber.org/atomic"
 )
+
+var _ Clock = (*ThrottledClock)(nil)
 
 // A NanoFunc is a function that returns a nanosecond timestamp as an int64.
 type NanoFunc = func() int64
@@ -33,7 +36,7 @@ type NanoFunc = func() int64
 // NewMonotonicNanoFunc returns a new, default NanoFunc that reports monotonic
 // system time as nanoseconds.
 func NewMonotonicNanoFunc() NanoFunc {
-	return Nanotime
+	return chrono.Nanotime
 }
 
 // NewWallNanoFunc returns a new, default NanoFunc that reports wall time as
@@ -88,6 +91,19 @@ func NewThrottledWallClock(interval time.Duration) *ThrottledClock {
 	return NewThrottledClock(NewWallNanoFunc(), interval)
 }
 
+// After returns a channel that receives the current time after d has elapsed.
+// This method is not throttled and uses Go's runtime timers.
+func (c *ThrottledClock) After(d time.Duration) <-chan time.Time {
+	return time.After(d)
+}
+
+// AfterFunc returns a timer that will invoke the given function after d has
+// elapsed. The timer may be stopped and reset. This method is not throttled
+// and uses Go's runtime timers.
+func (c *ThrottledClock) AfterFunc(d time.Duration, f func()) Timer {
+	return gotimer{time.AfterFunc(d, f)}
+}
+
 // Interval returns the interval at which the clock updates its internal time.
 func (c *ThrottledClock) Interval() time.Duration {
 	return c.interval
@@ -98,17 +114,54 @@ func (c *ThrottledClock) Nanotime() int64 {
 	return c.now.Load()
 }
 
+// NewTicker returns a new Ticker that receives time ticks every d. This method
+// is not throttled and uses Go's runtime timers.
+func (c *ThrottledClock) NewTicker(d time.Duration) Ticker {
+	return goticker{time.NewTicker(d)}
+}
+
+// NewTimer returns a new Timer that receives a time tick after d. This method
+// is not throttled and uses Go's runtime timers.
+func (c *ThrottledClock) NewTimer(d time.Duration) Timer {
+	return gotimer{time.NewTimer(d)}
+}
+
 // Now returns the current time as time.Time.
 func (c *ThrottledClock) Now() time.Time {
 	return time.Unix(0, c.now.Load())
 }
 
-// Stop stops the clock.
+// Since returns the amount of time that elapsed between the clock's internal
+// time and t.
+func (c *ThrottledClock) Since(t time.Time) time.Duration {
+	return c.SinceNanotime(t.UnixNano())
+}
+
+// SinceNanotime returns the amount of time that elapsed between the clock's
+// internal time and ns.
+func (c *ThrottledClock) SinceNanotime(ns int64) time.Duration {
+	return time.Duration(c.now.Load() - ns)
+}
+
+// Sleep puts the current goroutine to sleep for d. This method is not
+// throttled and uses Go's runtime timers.
+func (c *ThrottledClock) Sleep(d time.Duration) {
+	time.Sleep(d)
+}
+
+// Stop stops the clock. Note that this has no effect on currently-running
+// timers.
 func (c *ThrottledClock) Stop() {
 	if !c.stopped.CAS(false, true) {
 		return
 	}
 	close(c.done)
+}
+
+// Tick returns a new channel that receives time ticks every d. It is
+// equivalent to writing c.NewTicker(d).C().
+func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {
+	return c.NewTicker(d).C()
 }
 
 func (c *ThrottledClock) run(interval time.Duration) {
