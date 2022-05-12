@@ -67,6 +67,7 @@ func TestThrottledClock(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo
 func TestThrottledClockTimers(t *testing.T) {
 	clk := clock.NewThrottledClock(func() int64 { return 0 }, time.Minute)
 	defer clk.Stop()
