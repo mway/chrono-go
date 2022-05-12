@@ -22,6 +22,7 @@ package clock_test
 
 import (
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 
@@ -64,6 +65,125 @@ func TestThrottledClock(t *testing.T) {
 			require.True(t, clock.Now().After(prevTime), "time did not increase")
 		})
 	}
+}
+
+func TestThrottledClockTimers(t *testing.T) {
+	clk := clock.NewThrottledClock(func() int64 { return 0 }, time.Minute)
+	defer clk.Stop()
+
+	var (
+		first = clk.Nanotime()
+		wg    sync.WaitGroup
+	)
+
+	// ThrottledClock.NewTimer
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		timer := clk.NewTimer(time.Millisecond)
+		defer timer.Stop()
+
+		select {
+		case _, ok := <-timer.C():
+			require.True(t, ok, "zero time returned")
+		case <-time.After(time.Second):
+			require.FailNow(t, "timer did not fire")
+		}
+	}()
+
+	// ThrottledClock.NewTicker
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		ticker := clk.NewTicker(time.Millisecond)
+		defer ticker.Stop()
+
+		for i := 0; i < 10; i++ {
+			select {
+			case <-ticker.C():
+			case <-time.After(time.Second):
+				require.FailNow(t, "timer did not fire")
+			}
+		}
+	}()
+
+	// ThrottledClock.Tick
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		tickerC := clk.Tick(time.Millisecond)
+
+		for i := 0; i < 10; i++ {
+			select {
+			case <-tickerC:
+			case <-time.After(time.Second):
+				require.FailNow(t, "timer did not fire")
+			}
+		}
+	}()
+
+	// ThrottledClock.After
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		timerC := clk.After(time.Millisecond)
+
+		select {
+		case <-timerC:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timer did not fire")
+		}
+	}()
+
+	// ThrottledClock.AfterFunc
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		timerC := make(chan struct{})
+		clk.AfterFunc(time.Millisecond, func() {
+			close(timerC)
+		})
+
+		select {
+		case <-timerC:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timer did not fire")
+		}
+	}()
+
+	// ThrottledClock.Sleep
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		timerC := make(chan struct{})
+		go func() {
+			clk.Sleep(10 * time.Millisecond)
+			close(timerC)
+		}()
+
+		select {
+		case <-timerC:
+		case <-time.After(time.Second):
+			require.FailNow(t, "timer did not fire")
+		}
+	}()
+
+	wg.Wait()
+	require.Equal(t, first, clk.Nanotime())
+}
+
+func TestThrottledClockSince(t *testing.T) {
+	clk := clock.NewThrottledClock(func() int64 { return 123 }, time.Minute)
+	defer clk.Stop()
+
+	require.Equal(t, 23*time.Nanosecond, clk.Since(time.Unix(0, 100)))
+	require.Equal(t, 23*time.Nanosecond, clk.SinceNanotime(100))
 }
 
 func TestThrottledClockInternals(t *testing.T) {
