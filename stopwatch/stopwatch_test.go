@@ -72,3 +72,23 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+func TestStopwatch_Elapsed(t *testing.T) {
+	var (
+		clk = clock.NewFakeClock()
+		sw  = newStopwatch(t, stopwatch.WithClock(clk))
+	)
+
+	for i := 0; i < 1e4; i++ {
+		require.EqualValues(t, 0, sw.Elapsed())
+	}
+
+	clk.Add(time.Second)
+	require.EqualValues(t, time.Second, sw.Elapsed())
+}
+
+func newStopwatch(t *testing.T, opts ...stopwatch.Option) *stopwatch.Stopwatch {
+	sw, err := stopwatch.New(opts...)
+	require.NoError(t, err)
+	return sw
+}
