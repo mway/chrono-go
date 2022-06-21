@@ -58,16 +58,22 @@ func NewClock(opts ...Option) (Clock, error) {
 	return newWallClock(options.TimeFunc), nil
 }
 
+// MustClock panics if the given error is not nil, otherwise it returns the
+// given clock.
+func MustClock(clock Clock, err error) Clock {
+	if err != nil {
+		panic(err)
+	}
+
+	return clock
+}
+
 // NewMonotonicClock returns a new monotonic Clock.
 func NewMonotonicClock() Clock {
-	//nolint:errcheck
-	clk, _ := NewClock(WithNanotimeFunc(DefaultNanotimeFunc()))
-	return clk
+	return MustClock(NewClock(WithNanotimeFunc(DefaultNanotimeFunc())))
 }
 
 // NewWallClock returns a new wall Clock.
 func NewWallClock() Clock {
-	//nolint:errcheck
-	clk, _ := NewClock(WithTimeFunc(DefaultTimeFunc()))
-	return clk
+	return MustClock(NewClock(WithTimeFunc(DefaultTimeFunc())))
 }
