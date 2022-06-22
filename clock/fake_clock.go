@@ -41,11 +41,18 @@ type FakeClock struct {
 	now    atomic.Int64
 	mu     sync.Mutex
 	clk    monotonicClock
+	hooks  resolvedHooks
 }
 
 // NewFakeClock creates a new FakeClock.
-func NewFakeClock() *FakeClock {
-	c := new(FakeClock)
+func NewFakeClock(opts ...FakeOption) *FakeClock {
+	var (
+		options = DefaultFakeOptions().With(opts...)
+		c       = &FakeClock{
+			hooks: newResolvedHooks(options.Hooks),
+		}
+	)
+
 	c.clk = monotonicClock{
 		fn: func() int64 {
 			return c.now.Load()
@@ -76,8 +83,12 @@ func (c *FakeClock) Nanotime() int64 {
 	return c.clk.Nanotime()
 }
 
-// NewTicker returns a new Ticker that receives time ticks every d.
+// NewTicker returns a new Ticker that receives time ticks every d. The given
+// duration must be greater than 0.
 func (c *FakeClock) NewTicker(d time.Duration) Ticker {
+	if d <= 0 {
+		panic("non-positive interval for FakeClock.NewTicker")
+	}
 	return fakeTicker{c.addTimer(int64(d), int64(d), nil)}
 }
 
@@ -128,20 +139,17 @@ func (c *FakeClock) Sleep(d time.Duration) {
 }
 
 // Tick returns a new channel that receives time ticks every d. It is
-// equivalent to writing c.NewTicker(d).C().
+// equivalent to writing c.NewTicker(d).C(). The given duration must be greater
+// than 0.
 func (c *FakeClock) Tick(d time.Duration) <-chan time.Time {
+	if d < 0 {
+		panic("non-positive interval for FakeClock.Tick")
+	}
 	return c.NewTicker(d).C()
 }
 
 func (c *FakeClock) addTimer(when int64, period int64, fn func()) *fakeTimer {
-	if when < 0 {
-		when = 0
-	}
-
-	if period < 0 {
-		period = 0
-	}
-
+	dur := time.Duration(when)
 	when = c.clk.Nanotime() + when
 
 	c.mu.Lock()
@@ -159,7 +167,7 @@ func (c *FakeClock) addTimer(when int64, period int64, fn func()) *fakeTimer {
 		}
 	}
 
-	x := newFakeTimer(c, when, period, fn)
+	x := newFakeTimer(c, dur, when, period, fn)
 	c.timers = append(c.timers, x)
 
 	if i < len(c.timers) {
@@ -167,7 +175,38 @@ func (c *FakeClock) addTimer(when int64, period int64, fn func()) *fakeTimer {
 		c.timers[i] = x
 	}
 
+	c.callCreateCallback(dur, period > 0)
 	return c.timers[i]
+}
+
+func (c *FakeClock) callCreateCallback(dur time.Duration, ticker bool) {
+	go func() {
+		if ticker {
+			c.hooks.OnTickerCreate(c, dur)
+		} else {
+			c.hooks.OnTimerCreate(c, dur)
+		}
+	}()
+}
+
+func (c *FakeClock) callResetCallback(dur time.Duration, ticker bool) {
+	go func() {
+		if ticker {
+			c.hooks.OnTickerReset(c, dur)
+		} else {
+			c.hooks.OnTimerReset(c, dur)
+		}
+	}()
+}
+
+func (c *FakeClock) callStopCallback(ticker bool) {
+	go func() {
+		if ticker {
+			c.hooks.OnTickerStop(c)
+		} else {
+			c.hooks.OnTimerStop(c)
+		}
+	}()
 }
 
 func (c *FakeClock) checkTimers(now int64) {
@@ -210,26 +249,24 @@ func (c *FakeClock) removeTimer(t *fakeTimer) {
 }
 
 func (c *FakeClock) resetTimer(t *fakeTimer, when int64) int64 {
-	if when < 0 {
-		when = 0
+	if t == nil {
+		return 0
 	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	defer c.sortTimersNosync()
 
-	for i := 0; i < len(c.timers); i++ {
-		if t == c.timers[i] {
-			prev := c.timers[i].when
-			c.timers[i].when = c.clk.Nanotime() + when
-			if c.timers[i].period > 0 {
-				c.timers[i].period = when
-			}
-			return prev
-		}
+	prev := t.when
+	t.when = c.clk.Nanotime() + when
+	t.dur = time.Duration(when)
+
+	if t.period > 0 {
+		t.period = when
 	}
 
-	return 0
+	c.callResetCallback(t.dur, t.period > 0)
+	return prev
 }
 
 func (c *FakeClock) sortTimersNosync() {
@@ -246,14 +283,20 @@ func (c *FakeClock) stopTimer(t *fakeTimer) int64 {
 }
 
 func (c *FakeClock) stopTimerNosync(t *fakeTimer) int64 {
+	if t == nil {
+		return 0
+	}
+
 	for i := 0; i < len(c.timers); i++ {
 		if t == c.timers[i] {
-			prev := c.timers[i].when
-			if prev >= 0 {
-				c.timers[i].when = -1
+			defer c.callStopCallback(t.period > 0)
+
+			if prev := t.when; prev >= 0 {
+				t.when = -1
 				return prev
 			}
-			return 0
+
+			break
 		}
 	}
 

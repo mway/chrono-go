@@ -21,36 +21,36 @@
 package clock
 
 import (
+	"fmt"
 	"time"
 )
 
-var _ Timer = (*fakeTimer)(nil)
-
-type fakeTicker struct {
-	*fakeTimer
-}
-
-func (t fakeTicker) Reset(d time.Duration) {
-	t.fakeTimer.Reset(d)
-}
-
-func (t fakeTicker) Stop() {
-	t.fakeTimer.Stop()
-}
+var (
+	_ Ticker = (*fakeTicker)(nil)
+	_ Timer  = (*fakeTimer)(nil)
+)
 
 type fakeTimer struct {
 	ch     chan time.Time
 	clk    *FakeClock
 	fn     func()
+	dur    time.Duration
 	when   int64
 	period int64
 }
 
-func newFakeTimer(clk *FakeClock, when int64, period int64, fn func()) *fakeTimer {
+func newFakeTimer(
+	clk *FakeClock,
+	dur time.Duration,
+	when int64,
+	period int64,
+	fn func(),
+) *fakeTimer {
 	return &fakeTimer{
 		ch:     make(chan time.Time, 1),
 		clk:    clk,
 		fn:     fn,
+		dur:    dur,
 		when:   when,
 		period: period,
 	}
@@ -61,6 +61,13 @@ func (t *fakeTimer) C() <-chan time.Time {
 }
 
 func (t *fakeTimer) Reset(d time.Duration) bool {
+	if d <= 0 {
+		typename := "Timer"
+		if t.period > 0 {
+			typename = "Ticker"
+		}
+		panic(fmt.Sprintf("non-positive interval for %s.Reset", typename))
+	}
 	return t.clk.resetTimer(t, int64(d)) > 0
 }
 
@@ -88,4 +95,16 @@ func (t *fakeTimer) tick(now int64) {
 		default:
 		}
 	}
+}
+
+type fakeTicker struct {
+	*fakeTimer
+}
+
+func (t fakeTicker) Reset(d time.Duration) {
+	t.fakeTimer.Reset(d)
+}
+
+func (t fakeTicker) Stop() {
+	t.fakeTimer.Stop()
 }

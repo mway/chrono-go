@@ -21,6 +21,7 @@
 package clock_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -122,6 +123,17 @@ func TestNewClockResultingClock(t *testing.T) {
 			require.Equal(t, tt.expectNanotime, clk.Nanotime())
 		})
 	}
+}
+
+func TestMustClock(t *testing.T) {
+	require.Panics(t, func() {
+		clock.MustClock(nil, errors.New("error"))
+	})
+
+	require.NotPanics(t, func() {
+		clk := clock.NewFakeClock()
+		require.Equal(t, clk, clock.MustClock(clk, nil))
+	})
 }
 
 func TestSpecializedClockConstructors(t *testing.T) {

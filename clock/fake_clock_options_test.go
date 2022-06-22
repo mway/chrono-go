@@ -18,42 +18,42 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package stopwatch
+package clock_test
 
 import (
+	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"go.mway.dev/chrono/clock"
-	"go.uber.org/atomic"
 )
 
-// A Stopwatch measures elapsed time.
-type Stopwatch struct {
-	clock clock.Clock
-	start atomic.Int64
-}
+func TestFakeOptions(t *testing.T) {
+	var (
+		calls int
+		base  = clock.FakeOptions{
+			Hooks: []clock.FakeHook{
+				{
+					OnCreate: func(*clock.FakeClock, time.Duration) {
+						calls++
+					},
+				},
+			},
+		}
+		merged = base.With(clock.FakeOptions{
+			Hooks: []clock.FakeHook{
+				{
+					OnCreate: func(*clock.FakeClock, time.Duration) {
+						calls++
+					},
+				},
+			},
+		})
+	)
 
-// New creates a new Stopwatch with the given options.
-func New(opts ...Option) (*Stopwatch, error) {
-	options := DefaultOptions().With(opts...)
-	if err := options.Validate(); err != nil {
-		return nil, err
+	for _, hook := range merged.Hooks {
+		hook.OnCreate(nil, 0)
 	}
 
-	s := &Stopwatch{
-		clock: options.Clock,
-	}
-	s.Reset()
-
-	return s, nil
-}
-
-// Elapsed returns the time elapsed since the last call to Reset.
-func (s *Stopwatch) Elapsed() time.Duration {
-	return time.Duration(s.clock.Nanotime() - s.start.Load())
-}
-
-// Reset sets the Stopwatch's internal time to the current time.
-func (s *Stopwatch) Reset() {
-	s.start.Store(s.clock.Nanotime())
+	require.Equal(t, 2, calls)
 }

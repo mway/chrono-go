@@ -21,6 +21,7 @@
 package clock_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -170,13 +171,15 @@ func TestFakeClockTimerZeroes(t *testing.T) {
 	clk.Add(time.Second)
 	requireTick(t, timer.C())
 
-	// Ensure that the timer will fire even if we provide a duration <= 0.
-	timer.Reset(-1)
-	clk.Add(time.Second)
-	requireTick(t, timer.C())
+	// Ensure that the timer will panic if given a duration <= 0.
+	require.Panics(t, func() {
+		timer.Reset(-1)
+	})
+	require.Panics(t, func() {
+		timer.Reset(0)
+	})
 
-	timer.Reset(0)
-	require.True(t, timer.Stop())
+	require.False(t, timer.Stop())
 }
 
 func TestFakeClockNewTicker(t *testing.T) {
@@ -197,23 +200,34 @@ func TestFakeClockNewTicker(t *testing.T) {
 
 	ticker.Stop()
 	requireNoTick(t, ticker.C())
+
+	require.Panics(t, func() {
+		clk.NewTicker(-1)
+	})
+
+	require.Panics(t, func() {
+		clk.NewTicker(0)
+	})
 }
 
 func TestFakeClockTickerZeroes(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
-		ticker = clk.NewTicker(-1)
+		ticker = clk.NewTicker(time.Second)
 	)
 
 	requireNoTick(t, ticker.C())
 
-	// Ensure that the ticker will fire even if we provided a duration <= 0.
 	clk.Add(time.Second)
 	requireTick(t, ticker.C())
 
-	ticker.Reset(0)
-	clk.Add(time.Second)
-	requireTick(t, ticker.C())
+	// Ensure that the ticker will panic if given a duration <= 0.
+	require.Panics(t, func() {
+		ticker.Reset(-1)
+	})
+	require.Panics(t, func() {
+		ticker.Reset(0)
+	})
 }
 
 func TestFakeClockTick(t *testing.T) {
@@ -227,6 +241,14 @@ func TestFakeClockTick(t *testing.T) {
 		clk.Add(time.Second)
 		requireTick(t, tickerC)
 	}
+
+	require.Panics(t, func() {
+		clk.Tick(-1)
+	})
+
+	require.Panics(t, func() {
+		clk.Tick(0)
+	})
 }
 
 func TestFakeClockSleep(t *testing.T) {
@@ -331,6 +353,283 @@ func TestFakeClockManyTimers(t *testing.T) {
 		require.True(t, timers[j].Stop())
 		requireNoTick(t, timers[j].C())
 	}
+}
+
+// TODO: refactor this test
+func TestFakeClockHooks(t *testing.T) {
+	type expectedCallCounts struct {
+		timerOnCreate  int64
+		timerOnReset   int64
+		timerOnStop    int64
+		tickerOnCreate int64
+		tickerOnReset  int64
+		tickerOnStop   int64
+	}
+
+	var (
+		calls = newCallCounts()
+		cases = map[string]struct {
+			numTimers   int
+			numTickers  int
+			give        []clock.FakeHook
+			wantCalls   expectedCallCounts
+			actualCalls callCounts
+		}{
+			"filter all same hook": {
+				numTimers:  1,
+				numTickers: 1,
+				give: func() []clock.FakeHook {
+					return []clock.FakeHook{
+						{
+							Filter: clock.FilterAll,
+							OnCreate: func(*clock.FakeClock, time.Duration) {
+								defer calls.wg.Done()
+								calls.timerOnCreate.Inc()
+							},
+							OnReset: func(*clock.FakeClock, time.Duration) {
+								defer calls.wg.Done()
+								calls.timerOnReset.Inc()
+							},
+							OnStop: func(*clock.FakeClock) {
+								defer calls.wg.Done()
+								calls.timerOnStop.Inc()
+							},
+						},
+					}
+				}(),
+				wantCalls: expectedCallCounts{
+					timerOnCreate:  2,
+					timerOnReset:   2,
+					timerOnStop:    2,
+					tickerOnCreate: 0,
+					tickerOnReset:  0,
+					tickerOnStop:   0,
+				},
+				actualCalls: calls,
+			},
+			"filter all different hooks": {
+				numTimers:  1,
+				numTickers: 1,
+				give: []clock.FakeHook{
+					{
+						Filter: clock.FilterTimers,
+						OnCreate: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.timerOnCreate.Inc()
+						},
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.timerOnReset.Inc()
+						},
+						OnStop: func(*clock.FakeClock) {
+							defer calls.wg.Done()
+							calls.timerOnStop.Inc()
+						},
+					},
+					{
+						Filter: clock.FilterTickers,
+						OnCreate: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnCreate.Inc()
+						},
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnReset.Inc()
+						},
+						OnStop: func(*clock.FakeClock) {
+							defer calls.wg.Done()
+							calls.tickerOnStop.Inc()
+						},
+					},
+				},
+				wantCalls: expectedCallCounts{
+					timerOnCreate:  1,
+					timerOnReset:   1,
+					timerOnStop:    1,
+					tickerOnCreate: 1,
+					tickerOnReset:  1,
+					tickerOnStop:   1,
+				},
+				actualCalls: calls,
+			},
+			"filter timer OnStop single": {
+				numTimers:  1,
+				numTickers: 0,
+				give: []clock.FakeHook{
+					{
+						Filter: clock.FilterTimers,
+						OnStop: func(*clock.FakeClock) {
+							defer calls.wg.Done()
+							calls.timerOnStop.Inc()
+						},
+					},
+				},
+				wantCalls: expectedCallCounts{
+					timerOnCreate:  0,
+					timerOnReset:   0,
+					timerOnStop:    1,
+					tickerOnCreate: 0,
+					tickerOnReset:  0,
+					tickerOnStop:   0,
+				},
+				actualCalls: calls,
+			},
+			"filter ticker OnReset double": {
+				numTimers:  0,
+				numTickers: 2,
+				give: []clock.FakeHook{
+					{
+						Filter: clock.FilterTickers,
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnReset.Inc()
+						},
+					},
+					{
+						Filter: clock.FilterTickers,
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnReset.Inc()
+						},
+					},
+				},
+				wantCalls: expectedCallCounts{
+					timerOnCreate:  0,
+					timerOnReset:   0,
+					timerOnStop:    0,
+					tickerOnCreate: 0,
+					tickerOnReset:  4,
+					tickerOnStop:   0,
+				},
+				actualCalls: calls,
+			},
+		}
+	)
+
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
+			// We share atomic state between tests, so reset it first.
+			tt.actualCalls.Reset(int(
+				tt.wantCalls.tickerOnCreate +
+					tt.wantCalls.tickerOnReset +
+					tt.wantCalls.tickerOnStop +
+					tt.wantCalls.timerOnCreate +
+					tt.wantCalls.timerOnReset +
+					tt.wantCalls.timerOnStop,
+			))
+
+			var (
+				clk     = clock.NewFakeClock(clock.WithFakeHooks(tt.give...))
+				timers  = make([]clock.Timer, 0, tt.numTimers)
+				tickers = make([]clock.Ticker, 0, tt.numTickers)
+			)
+
+			for i := 0; i < tt.numTimers; i++ {
+				timers = append(timers, clk.NewTimer(time.Second))
+			}
+
+			for _, timer := range timers {
+				timer.Reset(time.Second)
+			}
+
+			for _, timer := range timers {
+				timer.Stop()
+			}
+
+			for i := 0; i < tt.numTickers; i++ {
+				tickers = append(tickers, clk.NewTicker(time.Second))
+			}
+
+			for _, ticker := range tickers {
+				ticker.Reset(time.Second)
+			}
+
+			for _, ticker := range tickers {
+				ticker.Stop()
+			}
+
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				tt.actualCalls.wg.Wait()
+			}()
+
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				require.FailNow(t, "callbacks not executed in time")
+			}
+
+			require.Equal(
+				t,
+				tt.wantCalls.timerOnCreate,
+				tt.actualCalls.timerOnCreate.Load(),
+				"incorrect timer OnCreate count",
+			)
+			require.Equal(
+				t,
+				tt.wantCalls.timerOnReset,
+				tt.actualCalls.timerOnReset.Load(),
+				"incorrect timer OnReset count",
+			)
+			require.Equal(
+				t,
+				tt.wantCalls.timerOnStop,
+				tt.actualCalls.timerOnStop.Load(),
+				"incorrect timer OnStop count",
+			)
+			require.Equal(
+				t,
+				tt.wantCalls.tickerOnCreate,
+				tt.actualCalls.tickerOnCreate.Load(),
+				"incorrect ticker OnCreate count",
+			)
+			require.Equal(
+				t,
+				tt.wantCalls.tickerOnReset,
+				tt.actualCalls.tickerOnReset.Load(),
+				"incorrect ticker OnReset count",
+			)
+			require.Equal(
+				t,
+				tt.wantCalls.tickerOnStop,
+				tt.actualCalls.tickerOnStop.Load(),
+				"incorrect ticker OnStop count",
+			)
+		})
+	}
+}
+
+type callCounts struct {
+	timerOnCreate  *atomic.Int64
+	timerOnReset   *atomic.Int64
+	timerOnStop    *atomic.Int64
+	tickerOnCreate *atomic.Int64
+	tickerOnReset  *atomic.Int64
+	tickerOnStop   *atomic.Int64
+	wg             *sync.WaitGroup
+}
+
+func newCallCounts() callCounts {
+	return callCounts{
+		timerOnCreate:  atomic.NewInt64(0),
+		timerOnReset:   atomic.NewInt64(0),
+		timerOnStop:    atomic.NewInt64(0),
+		tickerOnCreate: atomic.NewInt64(0),
+		tickerOnReset:  atomic.NewInt64(0),
+		tickerOnStop:   atomic.NewInt64(0),
+		wg:             &sync.WaitGroup{},
+	}
+}
+
+func (c *callCounts) Reset(n int) {
+	c.tickerOnCreate.Swap(0)
+	c.tickerOnReset.Swap(0)
+	c.tickerOnStop.Swap(0)
+	c.timerOnCreate.Swap(0)
+	c.timerOnReset.Swap(0)
+	c.timerOnStop.Swap(0)
+	c.wg.Add(n)
 }
 
 func requireClockSince(t *testing.T, expect int64, since int64, clk *clock.FakeClock) {
