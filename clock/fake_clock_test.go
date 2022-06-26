@@ -533,6 +533,35 @@ func TestFakeClock_Hooks(t *testing.T) {
 				},
 				actualCalls: calls,
 			},
+			"invalid filter": {
+				numTimers:  2,
+				numTickers: 2,
+				give: []clock.FakeHook{
+					{
+						Filter: clock.FakeHookFilter(123),
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnReset.Inc()
+						},
+					},
+					{
+						Filter: clock.FakeHookFilter(123),
+						OnReset: func(*clock.FakeClock, time.Duration) {
+							defer calls.wg.Done()
+							calls.tickerOnReset.Inc()
+						},
+					},
+				},
+				wantCalls: expectedCallCounts{
+					timerOnCreate:  0,
+					timerOnReset:   0,
+					timerOnStop:    0,
+					tickerOnCreate: 0,
+					tickerOnReset:  0,
+					tickerOnStop:   0,
+				},
+				actualCalls: calls,
+			},
 		}
 	)
 
