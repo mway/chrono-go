@@ -78,17 +78,13 @@ func (t *fakeTimer) tick(now int64) {
 	}
 
 	ts := time.Unix(0, now)
-	select {
-	case t.ch <- ts:
-	default:
-		select {
-		case <-t.ch:
-		default:
-		}
-
+	for {
 		select {
 		case t.ch <- ts:
+			return
 		default:
+			<-t.ch
+			continue
 		}
 	}
 }
