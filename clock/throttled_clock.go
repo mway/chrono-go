@@ -157,6 +157,12 @@ func (c *ThrottledClock) Stop() {
 	close(c.done)
 }
 
+// Stopwatch returns a new Stopwatch that uses the current clock for measuring
+// time. The clock's current time is used as the stopwatch's epoch.
+func (c *ThrottledClock) Stopwatch() Stopwatch {
+	return newStopwatch(c)
+}
+
 // Tick returns a new channel that receives time ticks every d. It is
 // equivalent to writing c.NewTicker(d).C().
 func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {

@@ -18,42 +18,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package stopwatch
+package clock
 
-import (
-	"time"
-
-	"go.mway.dev/chrono/clock"
-	"go.uber.org/atomic"
-)
+import "time"
 
 // A Stopwatch measures elapsed time.
 type Stopwatch struct {
-	clock clock.Clock
-	start atomic.Int64
+	clock Clock
+	epoch int64
 }
 
-// New creates a new Stopwatch with the given options.
-func New(opts ...Option) (*Stopwatch, error) {
-	options := DefaultOptions().With(opts...)
-	if err := options.Validate(); err != nil {
-		return nil, err
+func newStopwatch(clk Clock) Stopwatch {
+	return Stopwatch{
+		clock: clk,
+		epoch: clk.Nanotime(),
 	}
-
-	s := &Stopwatch{
-		clock: options.Clock,
-	}
-	s.Reset()
-
-	return s, nil
 }
 
 // Elapsed returns the time elapsed since the last call to Reset.
 func (s *Stopwatch) Elapsed() time.Duration {
-	return time.Duration(s.clock.Nanotime() - s.start.Load())
+	return time.Duration(s.clock.Nanotime() - s.epoch)
 }
 
-// Reset sets the Stopwatch's internal time to the current time.
-func (s *Stopwatch) Reset() {
-	s.start.Store(s.clock.Nanotime())
+// Reset resets the stopwatch to zero, returning the elapsed time since the
+// last call to Reset.
+func (s *Stopwatch) Reset() time.Duration {
+	var (
+		now     = s.clock.Nanotime()
+		elapsed = time.Duration(now - s.epoch)
+	)
+
+	s.epoch = now
+	return elapsed
 }

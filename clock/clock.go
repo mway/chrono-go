@@ -34,14 +34,15 @@ var ErrNoClockFunc = errors.New("no clock function provided")
 type Clock interface {
 	After(time.Duration) <-chan time.Time
 	AfterFunc(time.Duration, func()) Timer
-	Now() time.Time
 	Nanotime() int64
+	NewTicker(time.Duration) Ticker
+	NewTimer(time.Duration) Timer
+	Now() time.Time
 	Since(time.Time) time.Duration
 	SinceNanotime(int64) time.Duration
-	NewTimer(time.Duration) Timer
-	NewTicker(time.Duration) Ticker
-	Tick(time.Duration) <-chan time.Time
 	Sleep(time.Duration)
+	Stopwatch() Stopwatch
+	Tick(time.Duration) <-chan time.Time
 }
 
 // NewClock returns a new Clock based on the given options.

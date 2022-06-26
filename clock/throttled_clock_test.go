@@ -225,6 +225,35 @@ func TestThrottledClockInternals(t *testing.T) {
 	require.Equal(t, prev, clk.Nanotime())
 }
 
+func TestThrottledClockStopwatch(t *testing.T) {
+	var (
+		now   = atomic.NewInt64(0)
+		nowfn = func() int64 {
+			return now.Load()
+		}
+	)
+
+	clk := clock.NewThrottledClock(nowfn, time.Microsecond)
+	defer clk.Stop()
+
+	stopwatch := clk.Stopwatch()
+	require.Equal(t, 0*time.Second, stopwatch.Elapsed())
+
+	now.Add(int64(time.Second))
+	waitForChange(t, clk, 0)
+	require.Equal(t, time.Second, stopwatch.Elapsed())
+
+	now.Add(int64(time.Second))
+	waitForChange(t, clk, int64(time.Second))
+	require.Equal(t, 2*time.Second, stopwatch.Elapsed())
+	require.Equal(t, 2*time.Second, stopwatch.Reset())
+	require.Equal(t, 0*time.Second, stopwatch.Elapsed())
+
+	now.Add(int64(time.Second))
+	waitForChange(t, clk, int64(2*time.Second))
+	require.Equal(t, time.Second, stopwatch.Elapsed())
+}
+
 func waitForChange(t *testing.T, clk *clock.ThrottledClock, prev int64) {
 	var (
 		done = make(chan struct{})

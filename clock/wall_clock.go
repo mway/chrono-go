@@ -72,6 +72,10 @@ func (c *wallClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
 
+func (c *wallClock) Stopwatch() Stopwatch {
+	return newStopwatch(c)
+}
+
 func (c *wallClock) Tick(d time.Duration) <-chan time.Time {
 	return c.NewTicker(d).C()
 }

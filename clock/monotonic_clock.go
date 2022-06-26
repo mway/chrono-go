@@ -72,6 +72,10 @@ func (c *monotonicClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
 
+func (c *monotonicClock) Stopwatch() Stopwatch {
+	return newStopwatch(c)
+}
+
 func (c *monotonicClock) Tick(d time.Duration) <-chan time.Time {
 	return c.NewTicker(d).C()
 }

@@ -138,6 +138,12 @@ func (c *FakeClock) Sleep(d time.Duration) {
 	<-timer.ch
 }
 
+// Stopwatch returns a new Stopwatch that uses the current clock for measuring
+// time. The clock's current time is used as the stopwatch's epoch.
+func (c *FakeClock) Stopwatch() Stopwatch {
+	return newStopwatch(c)
+}
+
 // Tick returns a new channel that receives time ticks every d. It is
 // equivalent to writing c.NewTicker(d).C(). The given duration must be greater
 // than 0.

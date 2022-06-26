@@ -355,6 +355,26 @@ func TestFakeClockManyTimers(t *testing.T) {
 	}
 }
 
+func TestFakeClockStopwatch(t *testing.T) {
+	var (
+		clk       = clock.NewFakeClock()
+		stopwatch = clk.Stopwatch()
+	)
+
+	require.Equal(t, 0*time.Second, stopwatch.Elapsed())
+
+	clk.Add(time.Second)
+	require.Equal(t, time.Second, stopwatch.Elapsed())
+
+	clk.Add(time.Second)
+	require.Equal(t, 2*time.Second, stopwatch.Elapsed())
+	require.Equal(t, 2*time.Second, stopwatch.Reset())
+	require.Equal(t, 0*time.Second, stopwatch.Elapsed())
+
+	clk.Add(time.Second)
+	require.Equal(t, time.Second, stopwatch.Elapsed())
+}
+
 // TODO: refactor this test
 func TestFakeClockHooks(t *testing.T) {
 	type expectedCallCounts struct {

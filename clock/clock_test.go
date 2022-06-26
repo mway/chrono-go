@@ -339,6 +339,48 @@ func TestClockSleep(t *testing.T) {
 	}
 }
 
+func TestClockStopwatch(t *testing.T) {
+	var (
+		cases = []struct {
+			name      string
+			giveClock clock.Clock
+		}{
+			{
+				name:      "monotonic",
+				giveClock: clock.NewMonotonicClock(),
+			},
+			{
+				name:      "wall",
+				giveClock: clock.NewWallClock(),
+			},
+		}
+		waitElapse = func(sw *clock.Stopwatch, dur time.Duration) time.Duration {
+			for {
+				if x := sw.Elapsed(); x >= dur {
+					return dur
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+	)
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				stopwatch = tt.giveClock.Stopwatch()
+				elapsed   = waitElapse(&stopwatch, 10*time.Millisecond)
+			)
+
+			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
+			require.GreaterOrEqual(t, stopwatch.Reset(), elapsed)
+
+			elapsed = waitElapse(&stopwatch, 10*time.Millisecond)
+			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
+			require.GreaterOrEqual(t, stopwatch.Reset(), elapsed)
+		})
+	}
+}
+
 func newTestClock(t *testing.T, opts ...clock.Option) clock.Clock {
 	clk, err := clock.NewClock(opts...)
 	require.NoError(t, err)
