@@ -83,8 +83,8 @@ func (c *FakeClock) Nanotime() int64 {
 	return c.clk.Nanotime()
 }
 
-// NewTicker returns a new Ticker that receives time ticks every d. The given
-// duration must be greater than 0.
+// NewTicker returns a new Ticker that receives time ticks every d. If d is not
+// greater than zero, NewTicker will panic.
 func (c *FakeClock) NewTicker(d time.Duration) Ticker {
 	if d <= 0 {
 		panic("non-positive interval for FakeClock.NewTicker")
@@ -282,15 +282,15 @@ func (c *FakeClock) sortTimersNosync() {
 	})
 }
 
-func (c *FakeClock) stopTimer(t *fakeTimer) int64 {
+func (c *FakeClock) stopTimer(t *fakeTimer) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.stopTimerNosync(t)
 }
 
-func (c *FakeClock) stopTimerNosync(t *fakeTimer) int64 {
+func (c *FakeClock) stopTimerNosync(t *fakeTimer) bool {
 	if t == nil {
-		return 0
+		return false
 	}
 
 	for i := 0; i < len(c.timers); i++ {
@@ -299,12 +299,12 @@ func (c *FakeClock) stopTimerNosync(t *fakeTimer) int64 {
 
 			if prev := t.when; prev >= 0 {
 				t.when = -1
-				return prev
+				return true
 			}
 
 			break
 		}
 	}
 
-	return 0
+	return false
 }

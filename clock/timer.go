@@ -48,8 +48,9 @@ func (t gotimer) C() <-chan time.Time {
 type Ticker interface {
 	// C returns a channel that receives time ticks on every interval.
 	C() <-chan time.Time
-	// Reset resets the Ticker to have the given interval.
-	Reset(time.Duration)
+	// Reset resets the Ticker to have the given interval. If d is not greater
+	// than zero, Reset will panic.
+	Reset(d time.Duration)
 	// Stop stops the Ticker.
 	Stop()
 }

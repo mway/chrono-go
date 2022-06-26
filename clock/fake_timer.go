@@ -21,7 +21,7 @@
 package clock
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
@@ -61,18 +61,14 @@ func (t *fakeTimer) C() <-chan time.Time {
 }
 
 func (t *fakeTimer) Reset(d time.Duration) bool {
-	if d <= 0 {
-		typename := "Timer"
-		if t.period > 0 {
-			typename = "Ticker"
-		}
-		panic(fmt.Sprintf("non-positive interval for %s.Reset", typename))
+	if d <= 0 && t.period > 0 {
+		panic(errors.New("non-positive interval for Ticker.Reset"))
 	}
 	return t.clk.resetTimer(t, int64(d)) > 0
 }
 
 func (t *fakeTimer) Stop() bool {
-	return t.clk.stopTimer(t) > 0
+	return t.clk.stopTimer(t)
 }
 
 func (t *fakeTimer) tick(now int64) {

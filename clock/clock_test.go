@@ -30,44 +30,43 @@ import (
 	"go.uber.org/atomic"
 )
 
-func TestNewClockErrors(t *testing.T) {
-	cases := []struct {
-		name      string
+var (
+	_withNanotimeFunc = clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())
+	_withTimeFunc     = clock.WithTimeFunc(clock.DefaultTimeFunc())
+)
+
+func TestNewClock(t *testing.T) {
+	cases := map[string]struct {
 		opts      []clock.Option
 		expectErr bool
 	}{
-		{
-			name:      "no opts",
+		"no opts": {
 			opts:      nil,
 			expectErr: false,
 		},
-		{
-			name:      "default opts",
+		"default opts": {
 			opts:      []clock.Option{clock.DefaultOptions()},
 			expectErr: false,
 		},
-		{
-			name:      "with nanotime clock",
-			opts:      []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"with nanotime func": {
+			opts:      []clock.Option{_withNanotimeFunc},
 			expectErr: false,
 		},
-		{
-			name:      "with wall clock",
-			opts:      []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"with time func": {
+			opts:      []clock.Option{_withTimeFunc},
 			expectErr: false,
 		},
-		{
-			name: "with both clocks",
+		"with nanotime and time funcs": {
 			opts: []clock.Option{
-				clock.WithTimeFunc(clock.DefaultTimeFunc()),
-				clock.WithNanotimeFunc(clock.DefaultNanotimeFunc()),
+				_withNanotimeFunc,
+				_withTimeFunc,
 			},
 			expectErr: false,
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			clk, err := clock.NewClock(tt.opts...)
 			if tt.expectErr {
 				require.Error(t, err)
@@ -80,34 +79,35 @@ func TestNewClockErrors(t *testing.T) {
 	}
 }
 
-func TestNewClockResultingClock(t *testing.T) {
+func TestNewClock_Funcs(t *testing.T) {
 	var (
 		nanotimeFunc = func() int64 { return 123 }
 		timeFunc     = func() time.Time { return time.Unix(0, 456) }
-		cases        = []struct {
-			name           string
+		cases        = map[string]struct {
 			opts           []clock.Option
 			expectNanotime int64
 		}{
-			{
-				name:           "with nanotime clock",
+			"with nanotime func": {
 				opts:           []clock.Option{clock.WithNanotimeFunc(nanotimeFunc)},
 				expectNanotime: nanotimeFunc(),
 			},
-			{
-				name: "with nanotime clock via options",
+			"with nanotime func options": {
 				opts: []clock.Option{clock.Options{
 					NanotimeFunc: nanotimeFunc,
 				}},
 				expectNanotime: nanotimeFunc(),
 			},
-			{
-				name:           "with wall clock",
+			"with time func": {
 				opts:           []clock.Option{clock.WithTimeFunc(timeFunc)},
 				expectNanotime: timeFunc().UnixNano(),
 			},
-			{
-				name: "with both clocks",
+			"with time func options": {
+				opts: []clock.Option{clock.Options{
+					TimeFunc: timeFunc,
+				}},
+				expectNanotime: timeFunc().UnixNano(),
+			},
+			"with nanotime and time funcs": {
 				opts: []clock.Option{
 					clock.WithTimeFunc(timeFunc),
 					clock.WithNanotimeFunc(nanotimeFunc),
@@ -117,8 +117,8 @@ func TestNewClockResultingClock(t *testing.T) {
 		}
 	)
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			clk := newTestClock(t, tt.opts...)
 			require.Equal(t, tt.expectNanotime, clk.Nanotime())
 		})
@@ -137,22 +137,19 @@ func TestMustClock(t *testing.T) {
 }
 
 func TestSpecializedClockConstructors(t *testing.T) {
-	cases := []struct {
-		name  string
+	cases := map[string]struct {
 		clock clock.Clock
 	}{
-		{
-			name:  "monotonic",
+		"NewMonotonicClock": {
 			clock: clock.NewMonotonicClock(),
 		},
-		{
-			name:  "wall",
+		"NewWallClock": {
 			clock: clock.NewWallClock(),
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			cur := tt.clock.Nanotime()
 			for i := 0; i < 100; i++ {
 				time.Sleep(time.Millisecond)
@@ -164,23 +161,20 @@ func TestSpecializedClockConstructors(t *testing.T) {
 	}
 }
 
-func TestClockNewTimer(t *testing.T) {
-	cases := []struct {
-		name string
+func TestClock_NewTimer(t *testing.T) {
+	cases := map[string]struct {
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			var (
 				clk   = newTestClock(t, tt.opts...)
 				timer = clk.NewTimer(time.Millisecond)
@@ -192,23 +186,20 @@ func TestClockNewTimer(t *testing.T) {
 	}
 }
 
-func TestClockNewTicker(t *testing.T) {
-	cases := []struct {
-		name string
+func TestClock_NewTicker(t *testing.T) {
+	cases := map[string]struct {
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			var (
 				clk   = newTestClock(t, tt.opts...)
 				timer = clk.NewTicker(time.Millisecond)
@@ -220,47 +211,51 @@ func TestClockNewTicker(t *testing.T) {
 	}
 }
 
-func TestClockSince(t *testing.T) {
-	cases := []struct {
-		name string
+func TestClock_Since(t *testing.T) {
+	cases := map[string]struct {
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			clk := newTestClock(t, tt.opts...)
-			require.InEpsilon(t, clk.Now().UnixNano(), clk.Since(time.Unix(0, 0)), float64(time.Second))
-			require.InEpsilon(t, clk.Nanotime(), clk.SinceNanotime(0), float64(time.Second))
+			require.InEpsilon(
+				t,
+				clk.Now().UnixNano(),
+				clk.Since(time.Unix(0, 0)),
+				float64(time.Second),
+			)
+			require.InEpsilon(
+				t,
+				clk.Nanotime(),
+				clk.SinceNanotime(0),
+				float64(time.Second),
+			)
 		})
 	}
 }
 
-func TestClockAfter(t *testing.T) {
-	cases := []struct {
-		name string
+func TestClock_After(t *testing.T) {
+	cases := map[string]struct {
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			clk := newTestClock(t, tt.opts...)
 			requireTick(t, clk.After(time.Millisecond))
 
@@ -271,23 +266,20 @@ func TestClockAfter(t *testing.T) {
 	}
 }
 
-func TestClockTick(t *testing.T) {
-	cases := []struct {
-		name string
+func TestClock_Tick(t *testing.T) {
+	cases := map[string]struct {
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			var (
 				clk     = newTestClock(t, tt.opts...)
 				tickerC = clk.Tick(time.Millisecond)
@@ -300,18 +292,16 @@ func TestClockTick(t *testing.T) {
 	}
 }
 
-func TestClockSleep(t *testing.T) {
-	cases := []struct {
+func TestClock_Sleep(t *testing.T) {
+	cases := map[string]struct {
 		name string
 		opts []clock.Option
 	}{
-		{
-			name: "nanotime",
-			opts: []clock.Option{clock.WithNanotimeFunc(clock.DefaultNanotimeFunc())},
+		"nanotime func": {
+			opts: []clock.Option{_withNanotimeFunc},
 		},
-		{
-			name: "wall",
-			opts: []clock.Option{clock.WithTimeFunc(clock.DefaultTimeFunc())},
+		"time func": {
+			opts: []clock.Option{_withTimeFunc},
 		},
 	}
 
@@ -333,39 +323,41 @@ func TestClockSleep(t *testing.T) {
 				require.Fail(t, "did not wake")
 			case <-sleepdone:
 				since := clk.SinceNanotime(start)
-				require.InEpsilon(t, 50*time.Millisecond, since, float64(25*time.Millisecond))
+				require.InEpsilon(
+					t,
+					50*time.Millisecond,
+					since,
+					float64(25*time.Millisecond),
+				)
 			}
 		})
 	}
 }
 
-func TestClockStopwatch(t *testing.T) {
+func TestClock_Stopwatch(t *testing.T) {
 	var (
-		cases = []struct {
-			name      string
+		cases = map[string]struct {
 			giveClock clock.Clock
 		}{
-			{
-				name:      "monotonic",
+			"nanotime func": {
 				giveClock: clock.NewMonotonicClock(),
 			},
-			{
-				name:      "wall",
+			"time func": {
 				giveClock: clock.NewWallClock(),
 			},
 		}
-		waitElapse = func(sw *clock.Stopwatch, dur time.Duration) time.Duration {
+		waitElapse = func(s *clock.Stopwatch, d time.Duration) time.Duration {
 			for {
-				if x := sw.Elapsed(); x >= dur {
-					return dur
+				if x := s.Elapsed(); x >= d {
+					return d
 				}
 				time.Sleep(10 * time.Millisecond)
 			}
 		}
 	)
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			var (
 				stopwatch = tt.giveClock.Stopwatch()
 				elapsed   = waitElapse(&stopwatch, 10*time.Millisecond)

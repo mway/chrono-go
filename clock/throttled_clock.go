@@ -114,7 +114,8 @@ func (c *ThrottledClock) Nanotime() int64 {
 }
 
 // NewTicker returns a new Ticker that receives time ticks every d. This method
-// is not throttled and uses Go's runtime timers.
+// is not throttled and uses Go's runtime timers. If d is not greater than
+// zero, NewTicker will panic.
 func (c *ThrottledClock) NewTicker(d time.Duration) Ticker {
 	return goticker{time.NewTicker(d)}
 }

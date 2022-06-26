@@ -32,7 +32,7 @@ import (
 type Recorder struct {
 	clock clock.Clock
 	count atomic.Int64
-	start atomic.Int64
+	epoch atomic.Int64
 }
 
 // NewRecorder creates a new Recorder that uses the system's monotonic clock.
@@ -59,22 +59,20 @@ func (r *Recorder) Add(n int) {
 func (r *Recorder) Rate() Rate {
 	return Rate{
 		count:   r.count.Load(),
-		elapsed: r.clock.SinceNanotime(r.start.Load()),
+		elapsed: r.clock.SinceNanotime(r.epoch.Load()),
 	}
 }
 
-// Reset resets the running count to 0 and the start time to the current time
-// reported by the Recorder's clock.
-func (r *Recorder) Reset() {
-	r.count.Store(0)
-	r.start.Store(r.clock.Nanotime())
-}
-
-// TakeRate is like Rate, but also resets the Recorder's internal state.
-func (r *Recorder) TakeRate() Rate {
+// Reset returns the current Rate and resets the Recorder's running count and
+// epoch.
+func (r *Recorder) Reset() Rate {
+	var (
+		now     = r.clock.Nanotime()
+		elapsed = time.Duration(now - r.epoch.Swap(now))
+	)
 	return Rate{
 		count:   r.count.Swap(0),
-		elapsed: r.clock.SinceNanotime(r.start.Swap(r.clock.Nanotime())),
+		elapsed: elapsed,
 	}
 }
 

@@ -31,7 +31,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-func TestFakeClockAdd(t *testing.T) {
+func TestFakeClock_Add(t *testing.T) {
 	clk := clock.NewFakeClock()
 	requireClockIs(t, 0, clk)
 
@@ -53,7 +53,7 @@ func TestFakeClockAdd(t *testing.T) {
 	requireClockIs(t, 0, clk)
 }
 
-func TestFakeClockSetTime(t *testing.T) {
+func TestFakeClock_SetTime(t *testing.T) {
 	clk := clock.NewFakeClock()
 
 	for i := int64(1); i <= 1000; i++ {
@@ -67,7 +67,7 @@ func TestFakeClockSetTime(t *testing.T) {
 	}
 }
 
-func TestFakeClockSetNanotime(t *testing.T) {
+func TestFakeClock_SetNanotime(t *testing.T) {
 	clk := clock.NewFakeClock()
 
 	for i := int64(1); i <= 1000; i++ {
@@ -81,7 +81,7 @@ func TestFakeClockSetNanotime(t *testing.T) {
 	}
 }
 
-func TestFakeClockAfter(t *testing.T) {
+func TestFakeClock_After(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
 		timerC = clk.After(time.Second)
@@ -106,7 +106,7 @@ func TestFakeClockAfter(t *testing.T) {
 	requireTimeIs(t, 2*int64(time.Second), ts)
 }
 
-func TestFakeClockAfterFunc(t *testing.T) {
+func TestFakeClock_AfterFunc(t *testing.T) {
 	var (
 		clk   = clock.NewFakeClock()
 		calls = atomic.NewInt64(0)
@@ -136,7 +136,7 @@ func TestFakeClockSince(t *testing.T) {
 	}
 }
 
-func TestFakeClockNewTimer(t *testing.T) {
+func TestFakeClock_NewTimer(t *testing.T) {
 	var (
 		clk   = clock.NewFakeClock()
 		timer = clk.NewTimer(time.Second)
@@ -160,29 +160,39 @@ func TestFakeClockNewTimer(t *testing.T) {
 	requireNoTick(t, timer.C())
 }
 
-func TestFakeClockTimerZeroes(t *testing.T) {
+func TestFakeClock_Timer_Zeroes(t *testing.T) {
 	var (
 		clk   = clock.NewFakeClock()
-		timer = clk.NewTimer(0)
+		timer clock.Timer
 	)
+
+	require.NotPanics(t, func() {
+		timer = clk.NewTimer(-1)
+	})
+
+	require.NotPanics(t, func() {
+		timer = clk.NewTimer(0)
+	})
 
 	requireNoTick(t, timer.C())
 
 	clk.Add(time.Second)
 	requireTick(t, timer.C())
 
-	// Ensure that the timer will panic if given a duration <= 0.
-	require.Panics(t, func() {
+	// Ensure that resetting the timer will not panic if given a duration <= 0.
+	require.NotPanics(t, func() {
 		timer.Reset(-1)
 	})
-	require.Panics(t, func() {
+	require.NotPanics(t, func() {
 		timer.Reset(0)
 	})
 
-	require.False(t, timer.Stop())
+	// The timer will still report that it has been stopped, because the clock
+	// has not been changed.
+	require.True(t, timer.Stop())
 }
 
-func TestFakeClockNewTicker(t *testing.T) {
+func TestFakeClock_NewTicker(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
 		ticker = clk.NewTicker(time.Second)
@@ -210,7 +220,7 @@ func TestFakeClockNewTicker(t *testing.T) {
 	})
 }
 
-func TestFakeClockTickerZeroes(t *testing.T) {
+func TestFakeClock_Ticker_Zeroes(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
 		ticker = clk.NewTicker(time.Second)
@@ -230,7 +240,7 @@ func TestFakeClockTickerZeroes(t *testing.T) {
 	})
 }
 
-func TestFakeClockTick(t *testing.T) {
+func TestFakeClock_Tick(t *testing.T) {
 	var (
 		clk     = clock.NewFakeClock()
 		tickerC = clk.Tick(time.Second)
@@ -251,7 +261,7 @@ func TestFakeClockTick(t *testing.T) {
 	})
 }
 
-func TestFakeClockSleep(t *testing.T) {
+func TestFakeClock_Sleep(t *testing.T) {
 	var (
 		clk       = clock.NewFakeClock()
 		sleepdone = make(chan struct{})
@@ -273,7 +283,7 @@ func TestFakeClockSleep(t *testing.T) {
 	}
 }
 
-func TestFakeClockInterleavedTimers(t *testing.T) {
+func TestFakeClock_InterleavedTimers(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
 		timer2 = clk.NewTimer(2 * time.Second)
@@ -325,7 +335,7 @@ func TestFakeClockInterleavedTimers(t *testing.T) {
 	requireNoTick(t, timer3.C())
 }
 
-func TestFakeClockManyTimers(t *testing.T) {
+func TestFakeClock_ManyTimers(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
 		timers []clock.Timer
@@ -355,7 +365,7 @@ func TestFakeClockManyTimers(t *testing.T) {
 	}
 }
 
-func TestFakeClockStopwatch(t *testing.T) {
+func TestFakeClock_Stopwatch(t *testing.T) {
 	var (
 		clk       = clock.NewFakeClock()
 		stopwatch = clk.Stopwatch()
@@ -376,7 +386,7 @@ func TestFakeClockStopwatch(t *testing.T) {
 }
 
 // TODO: refactor this test
-func TestFakeClockHooks(t *testing.T) {
+func TestFakeClock_Hooks(t *testing.T) {
 	type expectedCallCounts struct {
 		timerOnCreate  int64
 		timerOnReset   int64

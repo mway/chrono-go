@@ -18,25 +18,37 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package clock
+package rate_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"go.mway.dev/chrono/rate"
 )
 
-func TestFakeClockInternals_UnknownTimer(t *testing.T) {
+func BenchmarkRecorder_Add(b *testing.B) {
+	recorder := rate.NewRecorder()
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		recorder.Add(1)
+	}
+}
+
+func BenchmarkRecorder_Rate(b *testing.B) {
 	var (
-		clk    = NewFakeClock()
-		timers = []*fakeTimer{
-			nil,
-			{},
-		}
+		recorder = rate.NewRecorder()
+		current  rate.Rate
 	)
 
-	for _, timer := range timers {
-		require.EqualValues(t, 0, clk.resetTimer(timer, 123))
-		require.EqualValues(t, false, clk.stopTimerNosync(timer))
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		current = recorder.Rate()
 	}
+
+	_ = current
 }

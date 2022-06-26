@@ -32,27 +32,24 @@ import (
 	"go.uber.org/atomic"
 )
 
-func TestThrottledClock(t *testing.T) {
-	cases := []struct {
-		name    string
+func TestThrottledClock_Constructors(t *testing.T) {
+	cases := map[string]struct {
 		clockFn func(time.Duration) *clock.ThrottledClock
 	}{
-		{
-			name: "mono",
+		"NewThrottledMonotonicClock": {
 			clockFn: func(d time.Duration) *clock.ThrottledClock {
 				return clock.NewThrottledMonotonicClock(d)
 			},
 		},
-		{
-			name: "wall",
+		"NewThrottledWallClock": {
 			clockFn: func(d time.Duration) *clock.ThrottledClock {
 				return clock.NewThrottledWallClock(d)
 			},
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
 			var (
 				clock     = tt.clockFn(time.Millisecond)
 				prevNanos = clock.Nanotime()
@@ -68,7 +65,7 @@ func TestThrottledClock(t *testing.T) {
 }
 
 //nolint:gocyclo
-func TestThrottledClockTimers(t *testing.T) {
+func TestThrottledClock_Timers(t *testing.T) {
 	clk := clock.NewThrottledClock(func() int64 { return 0 }, time.Minute)
 	defer clk.Stop()
 
@@ -179,7 +176,7 @@ func TestThrottledClockTimers(t *testing.T) {
 	require.Equal(t, first, clk.Nanotime())
 }
 
-func TestThrottledClockSince(t *testing.T) {
+func TestThrottledClock_Since(t *testing.T) {
 	clk := clock.NewThrottledClock(func() int64 { return 123 }, time.Minute)
 	defer clk.Stop()
 
@@ -187,7 +184,7 @@ func TestThrottledClockSince(t *testing.T) {
 	require.Equal(t, 23*time.Nanosecond, clk.SinceNanotime(100))
 }
 
-func TestThrottledClockInternals(t *testing.T) {
+func TestThrottledClock_Internals(t *testing.T) {
 	var (
 		now   = atomic.NewInt64(123)
 		nowfn = func() int64 {
@@ -225,7 +222,7 @@ func TestThrottledClockInternals(t *testing.T) {
 	require.Equal(t, prev, clk.Nanotime())
 }
 
-func TestThrottledClockStopwatch(t *testing.T) {
+func TestThrottledClock_Stopwatch(t *testing.T) {
 	var (
 		now   = atomic.NewInt64(0)
 		nowfn = func() int64 {

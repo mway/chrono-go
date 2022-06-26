@@ -60,7 +60,7 @@ func TestRecorder(t *testing.T) {
 	recorder.Reset()
 	recorder.Add(1_000_000)
 	clk.Add(1000 * time.Second)
-	rate = recorder.TakeRate()
+	rate = recorder.Reset()
 	require.EqualValues(t, 1_000, rate.Per(time.Second))
 
 	// Get a new rate after having called TakeRate to ensure that it's fresh.
@@ -74,6 +74,6 @@ func TestRecorderRealTime(t *testing.T) {
 	recorder := rate.NewRecorder()
 	recorder.Add(1_000_000)
 
-	rate := recorder.TakeRate()
+	rate := recorder.Reset()
 	require.True(t, rate.Per(time.Nanosecond) > 100.0)
 }

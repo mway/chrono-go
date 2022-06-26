@@ -25,14 +25,12 @@ package clock
 type FakeHookFilter uint8
 
 const (
-	// FilterNone will match nothing.
-	FilterNone FakeHookFilter = iota
+	// FilterAll will match both timers and tickers.
+	FilterAll FakeHookFilter = iota
 	// FilterTimers will match timers.
 	FilterTimers
 	// FilterTickers will match tickers.
 	FilterTickers
-	// FilterAll will match both timers and tickers.
-	FilterAll
 )
 
 // FakeOptions configure a FakeClock.
