@@ -373,6 +373,7 @@ func TestClockStopwatch(t *testing.T) {
 
 			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
 			require.GreaterOrEqual(t, stopwatch.Reset(), elapsed)
+			require.Less(t, stopwatch.Elapsed(), 10*time.Millisecond)
 
 			elapsed = waitElapse(&stopwatch, 10*time.Millisecond)
 			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
