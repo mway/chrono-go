@@ -4,10 +4,9 @@ go 1.18
 
 require (
 	github.com/stretchr/testify v1.7.2
-	go.mway.dev/errors v0.1.0
 	go.mway.dev/math v0.2.1
 	go.uber.org/atomic v1.9.0
-	go.uber.org/multierr v1.8.0
+	go.uber.org/goleak v1.1.12
 )
 
 require (

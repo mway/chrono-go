@@ -55,6 +55,7 @@ func TestThrottledClock_Constructors(t *testing.T) {
 				prevNanos = clock.Nanotime()
 				prevTime  = clock.Now()
 			)
+			defer clock.Stop()
 
 			waitForChange(t, clock, prevNanos)
 

@@ -21,6 +21,7 @@
 package clock
 
 import (
+	"sync"
 	"time"
 
 	"go.mway.dev/chrono"
@@ -54,6 +55,7 @@ type ThrottledClock struct {
 	now      atomic.Int64
 	stopped  atomic.Bool
 	interval time.Duration
+	wg       sync.WaitGroup
 }
 
 // NewThrottledClock creates a new ThrottledClock that uses the given NanoFunc
@@ -73,7 +75,12 @@ func NewThrottledClock(nowfn NanoFunc, interval time.Duration) *ThrottledClock {
 	// Set the clock to an initial time value.
 	c.now.Store(c.nowfn())
 
-	go c.run(interval)
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+		c.run(interval)
+	}()
+
 	return c
 }
 
@@ -152,10 +159,10 @@ func (c *ThrottledClock) Sleep(d time.Duration) {
 // Stop stops the clock. Note that this has no effect on currently-running
 // timers.
 func (c *ThrottledClock) Stop() {
-	if !c.stopped.CAS(false, true) {
-		return
+	if c.stopped.CAS(false, true) {
+		close(c.done)
 	}
-	close(c.done)
+	c.wg.Wait()
 }
 
 // Stopwatch returns a new Stopwatch that uses the current clock for measuring

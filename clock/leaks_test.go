@@ -18,13 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package chrono
+package clock_test
 
 import (
-	_ "unsafe" // for go:linkname
+	"testing"
+
+	"go.uber.org/goleak"
 )
 
-// Nanotime provides the current monotonic system time as integer nanoseconds.
-//
-//go:linkname Nanotime runtime.nanotime
-func Nanotime() int64
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
+}

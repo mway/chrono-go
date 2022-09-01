@@ -18,13 +18,5 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package chrono
-
-import (
-	_ "unsafe" // for go:linkname
-)
-
-// Nanotime provides the current monotonic system time as integer nanoseconds.
-//
-//go:linkname Nanotime runtime.nanotime
-func Nanotime() int64
+// Package rate provides rate-related utilities.
+package rate
