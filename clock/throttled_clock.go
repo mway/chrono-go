@@ -106,8 +106,12 @@ func (c *ThrottledClock) After(d time.Duration) <-chan time.Time {
 // AfterFunc returns a timer that will invoke the given function after d has
 // elapsed. The timer may be stopped and reset. This method is not throttled
 // and uses Go's runtime timers.
-func (c *ThrottledClock) AfterFunc(d time.Duration, f func()) Timer {
-	return gotimer{time.AfterFunc(d, f)}
+func (c *ThrottledClock) AfterFunc(d time.Duration, fn func()) *Timer {
+	x := time.AfterFunc(d, fn)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
 }
 
 // Interval returns the interval at which the clock updates its internal time.
@@ -120,17 +124,31 @@ func (c *ThrottledClock) Nanotime() int64 {
 	return c.now.Load()
 }
 
+// NewStopwatch returns a new Stopwatch that uses the current clock for
+// measuring time. The clock's current time is used as the stopwatch's epoch.
+func (c *ThrottledClock) NewStopwatch() *Stopwatch {
+	return newStopwatch(c)
+}
+
 // NewTicker returns a new Ticker that receives time ticks every d. This method
 // is not throttled and uses Go's runtime timers. If d is not greater than
 // zero, NewTicker will panic.
-func (c *ThrottledClock) NewTicker(d time.Duration) Ticker {
-	return goticker{time.NewTicker(d)}
+func (c *ThrottledClock) NewTicker(d time.Duration) *Ticker {
+	x := time.NewTicker(d)
+	return &Ticker{
+		C:      x.C,
+		ticker: x,
+	}
 }
 
 // NewTimer returns a new Timer that receives a time tick after d. This method
 // is not throttled and uses Go's runtime timers.
-func (c *ThrottledClock) NewTimer(d time.Duration) Timer {
-	return gotimer{time.NewTimer(d)}
+func (c *ThrottledClock) NewTimer(d time.Duration) *Timer {
+	x := time.NewTimer(d)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
 }
 
 // Now returns the current time as time.Time.
@@ -165,16 +183,11 @@ func (c *ThrottledClock) Stop() {
 	c.wg.Wait()
 }
 
-// Stopwatch returns a new Stopwatch that uses the current clock for measuring
-// time. The clock's current time is used as the stopwatch's epoch.
-func (c *ThrottledClock) Stopwatch() Stopwatch {
-	return newStopwatch(c)
-}
-
 // Tick returns a new channel that receives time ticks every d. It is
 // equivalent to writing c.NewTicker(d).C().
 func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {
-	return c.NewTicker(d).C()
+	//nolint:staticcheck
+	return time.Tick(d)
 }
 
 func (c *ThrottledClock) run(interval time.Duration) {

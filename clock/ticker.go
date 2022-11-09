@@ -18,42 +18,45 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE THE SOFTWARE.
 
-package clock_test
+package clock
 
 import (
-	"testing"
+	"errors"
 	"time"
-
-	"github.com/stretchr/testify/require"
-	"go.mway.dev/chrono/clock"
 )
 
-func TestFakeOptions(t *testing.T) {
-	var (
-		calls int
-		base  = clock.FakeOptions{
-			Hooks: []clock.FakeHook{
-				{
-					OnCreate: func(*clock.FakeClock, time.Duration) {
-						calls++
-					},
-				},
-			},
-		}
-		merged = base.With(clock.FakeOptions{
-			Hooks: []clock.FakeHook{
-				{
-					OnCreate: func(*clock.FakeClock, time.Duration) {
-						calls++
-					},
-				},
-			},
-		})
-	)
+// A Ticker is functionally equivalent to a [time.Ticker]. A Ticker must be
+// created by [Clock.NewTicker].
+type Ticker struct {
+	C      <-chan time.Time
+	ticker *time.Ticker
+	fake   *fakeTimer
+}
 
-	for _, hook := range merged.Hooks {
-		hook.OnCreate(nil, 0)
+// Reset stops a ticker and resets its period to the specified duration. The
+// next tick will arrive after the new period elapses. The duration d must be
+// greater than zero; if not, Reset will panic.
+func (t *Ticker) Reset(d time.Duration) {
+	if t.ticker != nil {
+		t.ticker.Reset(d)
+		return
 	}
 
-	require.Equal(t, 2, calls)
+	if d <= 0 {
+		panic(errors.New("non-positive interval for Ticker.Reset"))
+	}
+
+	t.fake.resetTimer(d)
+}
+
+// Stop turns off a ticker. After Stop, no more ticks will be sent. Stop does
+// not close the channel, to prevent a concurrent goroutine reading from the
+// channel from seeing an erroneous "tick".
+func (t *Ticker) Stop() {
+	if t.ticker != nil {
+		t.ticker.Stop()
+		return
+	}
+
+	t.fake.removeTimer()
 }

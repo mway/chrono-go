@@ -1,5 +1,7 @@
 #!/usr/bin/env just --justfile
 
+coverprofile := "cover.out"
+
 default:
     @just --list | grep -v default
 
@@ -7,7 +9,10 @@ tidy:
     go mod tidy
 
 test PKG="./..." *ARGS="":
-    go test -v -race -failfast -count 1 -coverprofile cover.out {{ PKG }} {{ ARGS }}
+    go test -v -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
+
+cover: test
+    go tool cover -html {{ coverprofile }}
 
 alias benchmark := bench
 

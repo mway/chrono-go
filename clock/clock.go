@@ -42,10 +42,14 @@ type Clock interface {
 	// AfterFunc waits for the duration to elapse and then calls f in its own
 	// goroutine. It returns a Timer that can be used to cancel the call using
 	// its Stop method.
-	AfterFunc(d time.Duration, f func()) Timer
+	AfterFunc(d time.Duration, fn func()) *Timer
 
 	// Nanotime returns the current time in nanoseconds.
 	Nanotime() int64
+
+	// NewStopwatch returns a new Stopwatch that uses the Clock for measuring
+	// time.
+	NewStopwatch() *Stopwatch
 
 	// NewTicker returns a new Ticker containing a channel that will send the
 	// current time on the channel after each tick. The period of the ticks is
@@ -53,11 +57,11 @@ type Clock interface {
 	// interval or drop ticks to make up for slow receivers. The duration d
 	// must be greater than zero; if not, NewTicker will panic. Stop the ticker
 	// to release associated resources.
-	NewTicker(d time.Duration) Ticker
+	NewTicker(d time.Duration) *Ticker
 
 	// NewTimer creates a new Timer that will send the current time on its
 	// channel after at least duration d.
-	NewTimer(d time.Duration) Timer
+	NewTimer(d time.Duration) *Timer
 
 	// Now returns the current time. For wall clocks, this is the local time;
 	// for monotonic clocks, this is the system's monotonic time. Other Clock
@@ -75,10 +79,6 @@ type Clock interface {
 	// Sleep pauses the current goroutine for at least the duration d. A
 	// negative or zero duration causes Sleep to return immediately.
 	Sleep(d time.Duration)
-
-	// Stopwatch returns a new Stopwatch that uses the Clock for measuring
-	// time.
-	Stopwatch() Stopwatch
 
 	// Tick is a convenience wrapper for NewTicker providing access to the
 	// ticking channel only. While Tick is useful for clients that have no need

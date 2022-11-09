@@ -24,41 +24,35 @@ import (
 	"time"
 )
 
-// A Timer is functionally equivalent to a *time.Timer.
-type Timer interface {
-	// C returns a channel that receives a time tick once the Timer expires.
-	C() <-chan time.Time
-	// Reset resets the Timer to have the given expiration. It returns whether
-	// the Timer was running when Reset was called.
-	Reset(time.Duration) bool
-	// Stop stops the Timer. It returns whether the Timer was running when Stop
-	// was called.
-	Stop() bool
+// A Timer is functionally equivalent to a [time.Timer]. A Timer must be
+// created by [Clock.NewTimer].
+type Timer struct {
+	C     <-chan time.Time
+	timer *time.Timer
+	fake  *fakeTimer
 }
 
-type gotimer struct {
-	*time.Timer
+// Reset changes the timer to expire after duration d. It returns true if the
+// timer had been active, false if the timer had expired or been stopped.
+//
+// See Reset documentation on [time.Timer] for more information.
+func (t *Timer) Reset(d time.Duration) bool {
+	if t.timer != nil {
+		return t.timer.Reset(d)
+	}
+
+	return t.fake.resetTimer(d)
 }
 
-func (t gotimer) C() <-chan time.Time {
-	return t.Timer.C
-}
-
-// A Ticker is functionally equivalent to a *time.Ticker.
-type Ticker interface {
-	// C returns a channel that receives time ticks on every interval.
-	C() <-chan time.Time
-	// Reset resets the Ticker to have the given interval. If d is not greater
-	// than zero, Reset will panic.
-	Reset(d time.Duration)
-	// Stop stops the Ticker.
-	Stop()
-}
-
-type goticker struct {
-	*time.Ticker
-}
-
-func (t goticker) C() <-chan time.Time {
-	return t.Ticker.C
+// Stop prevents the Timer from firing. It returns true if the call stops the
+// timer, false if the timer has already expired or been stopped. Stop does not
+// close the channel, to prevent a read from the channel succeeding
+// incorrectly.
+//
+// See Stop documentation on [time.Timer] for more information.
+func (t *Timer) Stop() bool {
+	if t.timer != nil {
+		return t.timer.Stop()
+	}
+	return t.fake.removeTimer()
 }

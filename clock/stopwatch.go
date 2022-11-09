@@ -22,14 +22,15 @@ package clock
 
 import "time"
 
-// A Stopwatch measures elapsed time.
+// A Stopwatch measures elapsed time. A Stopwatch is created by calling
+// [Clock.NewStopwatch].
 type Stopwatch struct {
 	clock Clock
 	epoch int64
 }
 
-func newStopwatch(clk Clock) Stopwatch {
-	return Stopwatch{
+func newStopwatch(clk Clock) *Stopwatch {
+	return &Stopwatch{
 		clock: clk,
 		epoch: clk.Nanotime(),
 	}

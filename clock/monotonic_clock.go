@@ -40,20 +40,36 @@ func (c *monotonicClock) After(d time.Duration) <-chan time.Time {
 	return time.After(d)
 }
 
-func (c *monotonicClock) AfterFunc(d time.Duration, f func()) Timer {
-	return gotimer{time.AfterFunc(d, f)}
+func (c *monotonicClock) AfterFunc(d time.Duration, fn func()) *Timer {
+	x := time.AfterFunc(d, fn)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
 }
 
 func (c *monotonicClock) Nanotime() int64 {
 	return c.fn()
 }
 
-func (c *monotonicClock) NewTicker(d time.Duration) Ticker {
-	return goticker{time.NewTicker(d)}
+func (c *monotonicClock) NewStopwatch() *Stopwatch {
+	return newStopwatch(c)
 }
 
-func (c *monotonicClock) NewTimer(d time.Duration) Timer {
-	return gotimer{time.NewTimer(d)}
+func (c *monotonicClock) NewTicker(d time.Duration) *Ticker {
+	x := time.NewTicker(d)
+	return &Ticker{
+		C:      x.C,
+		ticker: x,
+	}
+}
+
+func (c *monotonicClock) NewTimer(d time.Duration) *Timer {
+	timer := time.NewTimer(d)
+	return &Timer{
+		C:     timer.C,
+		timer: timer,
+	}
 }
 
 func (c *monotonicClock) Now() time.Time {
@@ -72,10 +88,7 @@ func (c *monotonicClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
 
-func (c *monotonicClock) Stopwatch() Stopwatch {
-	return newStopwatch(c)
-}
-
 func (c *monotonicClock) Tick(d time.Duration) <-chan time.Time {
-	return c.NewTicker(d).C()
+	//nolint:staticcheck
+	return time.Tick(d)
 }

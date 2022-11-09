@@ -84,7 +84,7 @@ func TestThrottledClock_Timers(t *testing.T) {
 		defer timer.Stop()
 
 		select {
-		case _, ok := <-timer.C():
+		case _, ok := <-timer.C:
 			require.True(t, ok, "zero time returned")
 		case <-time.After(time.Second):
 			require.FailNow(t, "timer did not fire")
@@ -101,7 +101,7 @@ func TestThrottledClock_Timers(t *testing.T) {
 
 		for i := 0; i < 10; i++ {
 			select {
-			case <-ticker.C():
+			case <-ticker.C:
 			case <-time.After(time.Second):
 				require.FailNow(t, "timer did not fire")
 			}
@@ -234,7 +234,7 @@ func TestThrottledClock_Stopwatch(t *testing.T) {
 	clk := clock.NewThrottledClock(nowfn, time.Microsecond)
 	defer clk.Stop()
 
-	stopwatch := clk.Stopwatch()
+	stopwatch := clk.NewStopwatch()
 	require.Equal(t, 0*time.Second, stopwatch.Elapsed())
 
 	now.Add(int64(time.Second))

@@ -180,8 +180,10 @@ func TestClock_NewTimer(t *testing.T) {
 				timer = clk.NewTimer(time.Millisecond)
 			)
 
-			requireTick(t, timer.C())
+			requireTick(t, timer.C)
 			require.False(t, timer.Stop())
+			timer.Reset(time.Second)
+			require.True(t, timer.Stop())
 		})
 	}
 }
@@ -201,12 +203,15 @@ func TestClock_NewTicker(t *testing.T) {
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
 			var (
-				clk   = newTestClock(t, tt.opts...)
-				timer = clk.NewTicker(time.Millisecond)
+				clk    = newTestClock(t, tt.opts...)
+				ticker = clk.NewTicker(time.Millisecond)
 			)
-			defer timer.Stop()
+			defer ticker.Stop()
 
-			requireTick(t, timer.C())
+			requireTick(t, ticker.C)
+			ticker.Stop()
+			ticker.Reset(time.Millisecond)
+			requireTick(t, ticker.C)
 		})
 	}
 }
@@ -359,15 +364,15 @@ func TestClock_Stopwatch(t *testing.T) {
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
 			var (
-				stopwatch = tt.giveClock.Stopwatch()
-				elapsed   = waitElapse(&stopwatch, 10*time.Millisecond)
+				stopwatch = tt.giveClock.NewStopwatch()
+				elapsed   = waitElapse(stopwatch, 10*time.Millisecond)
 			)
 
 			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
 			require.GreaterOrEqual(t, stopwatch.Reset(), elapsed)
 			require.Less(t, stopwatch.Elapsed(), 10*time.Millisecond)
 
-			elapsed = waitElapse(&stopwatch, 10*time.Millisecond)
+			elapsed = waitElapse(stopwatch, 10*time.Millisecond)
 			require.GreaterOrEqual(t, elapsed, 10*time.Millisecond)
 			require.GreaterOrEqual(t, stopwatch.Reset(), elapsed)
 		})

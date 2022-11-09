@@ -40,20 +40,36 @@ func (c *wallClock) After(d time.Duration) <-chan time.Time {
 	return time.After(d)
 }
 
-func (c *wallClock) AfterFunc(d time.Duration, f func()) Timer {
-	return gotimer{time.AfterFunc(d, f)}
+func (c *wallClock) AfterFunc(d time.Duration, fn func()) *Timer {
+	x := time.AfterFunc(d, fn)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
 }
 
 func (c *wallClock) Nanotime() int64 {
 	return c.fn().UnixNano()
 }
 
-func (c *wallClock) NewTicker(d time.Duration) Ticker {
-	return goticker{time.NewTicker(d)}
+func (c *wallClock) NewStopwatch() *Stopwatch {
+	return newStopwatch(c)
 }
 
-func (c *wallClock) NewTimer(d time.Duration) Timer {
-	return gotimer{time.NewTimer(d)}
+func (c *wallClock) NewTicker(d time.Duration) *Ticker {
+	ticker := time.NewTicker(d)
+	return &Ticker{
+		C:      ticker.C,
+		ticker: ticker,
+	}
+}
+
+func (c *wallClock) NewTimer(d time.Duration) *Timer {
+	x := time.NewTimer(d)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
 }
 
 func (c *wallClock) Now() time.Time {
@@ -72,10 +88,7 @@ func (c *wallClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
 
-func (c *wallClock) Stopwatch() Stopwatch {
-	return newStopwatch(c)
-}
-
 func (c *wallClock) Tick(d time.Duration) <-chan time.Time {
-	return c.NewTicker(d).C()
+	//nolint:staticcheck
+	return time.Tick(d)
 }
