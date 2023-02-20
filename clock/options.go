@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -26,10 +26,10 @@ import (
 	"go.mway.dev/chrono"
 )
 
-// A TimeFunc is a function that returns time as a time.Time object.
+// A TimeFunc is a function that returns time as a [time.Time] object.
 type TimeFunc = func() time.Time
 
-// DefaultTimeFunc returns a new TimeFunc that uses time.Now to tell time.
+// DefaultTimeFunc returns a new [TimeFunc] that uses [time.Now] to tell time.
 func DefaultTimeFunc() TimeFunc {
 	return time.Now
 }
@@ -37,23 +37,23 @@ func DefaultTimeFunc() TimeFunc {
 // A NanotimeFunc is a function that returns time as integer nanoseconds.
 type NanotimeFunc = func() int64
 
-// DefaultNanotimeFunc returns a new NanotimeFunc that uses chrono.Nanotime to
-// tell time.
+// DefaultNanotimeFunc returns a new [NanotimeFunc] that uses [chrono.Nanotime]
+// to tell time.
 func DefaultNanotimeFunc() NanotimeFunc {
 	return chrono.Nanotime
 }
 
-// Options configure a Clock.
+// Options configure a [Clock].
 type Options struct {
-	// TimeFunc configures the TimeFunc for a Clock.
+	// TimeFunc configures the [TimeFunc] for a [Clock].
 	// If both TimeFunc and NanotimeFunc are provided, NanotimeFunc is used.
 	TimeFunc TimeFunc
-	// NanotimeFunc configures the NanotimeFunc for a Clock.
+	// NanotimeFunc configures the [NanotimeFunc] for a [Clock].
 	// If both TimeFunc and NanotimeFunc are provided, NanotimeFunc is used.
 	NanotimeFunc NanotimeFunc
 }
 
-// DefaultOptions returns a new Options with sane defaults.
+// DefaultOptions returns a new [Options] with sane defaults.
 func DefaultOptions() Options {
 	return Options{
 		TimeFunc: DefaultTimeFunc(),
@@ -81,8 +81,8 @@ func (f optionFunc) apply(o *Options) {
 	f(o)
 }
 
-// WithNanotimeFunc returns an Option that configures a Clock to use f as its
-// time function.
+// WithNanotimeFunc returns an [Option] that configures a [Clock] to use f as
+// its time function.
 func WithNanotimeFunc(f NanotimeFunc) Option {
 	return optionFunc(func(o *Options) {
 		o.NanotimeFunc = f
@@ -90,7 +90,7 @@ func WithNanotimeFunc(f NanotimeFunc) Option {
 	})
 }
 
-// WithTimeFunc returns an Option that configures a Clock to use f as its
+// WithTimeFunc returns an [Option] that configures a [Clock] to use f as its
 // time function.
 func WithTimeFunc(f TimeFunc) Option {
 	return optionFunc(func(o *Options) {

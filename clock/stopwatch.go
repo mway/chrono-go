@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -36,7 +36,7 @@ func newStopwatch(clk Clock) *Stopwatch {
 	}
 }
 
-// Elapsed returns the time elapsed since the last call to Reset.
+// Elapsed returns the time elapsed since the last call to [Stopwatch.Reset].
 func (s *Stopwatch) Elapsed() time.Duration {
 	return time.Duration(s.clock.Nanotime() - s.epoch)
 }

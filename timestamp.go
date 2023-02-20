@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -32,12 +32,12 @@ import (
 // time.Time are expected to be in the same timezone.
 type Timestamp int64
 
-// NewTimestampFromTime returns x as a Timestamp.
+// NewTimestampFromTime returns x as a [Timestamp].
 func NewTimestampFromTime(x time.Time) Timestamp {
 	return NewTimestampFromNanos(x.UnixNano())
 }
 
-// NewTimestampFromNanos returns x as a Timestamp.
+// NewTimestampFromNanos returns x as a [Timestamp].
 func NewTimestampFromNanos(x int64) Timestamp {
 	return Timestamp(x)
 }
@@ -102,7 +102,7 @@ func (t Timestamp) SubTimestamp(u Timestamp) time.Duration {
 	return time.Duration(t - u)
 }
 
-// Time converts t to a UTC-based time.Time.
+// Time converts t to a UTC-based [time.Time].
 func (t Timestamp) Time() time.Time {
 	return time.Unix(0, int64(t))
 }

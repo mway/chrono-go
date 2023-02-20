@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -28,32 +28,32 @@ import (
 	"go.mway.dev/chrono"
 )
 
-// ErrNoClockFunc is returned when creating a new Clock without a valid clock
-// function.
+// ErrNoClockFunc is returned when creating a new [Clock] without a valid
+// [TimeFunc] or [NanotimeFunc].
 var ErrNoClockFunc = errors.New("no clock function provided")
 
 // A Clock tells time.
 type Clock interface {
 	// After waits for the duration to elapse and then sends the current time
 	// on the returned channel. It is equivalent to NewTimer(d).C. The
-	// underlying Timer is not recovered by the garbage collector until the
-	// timer fires. If efficiency is a concern, use NewTimer instead and call
-	// Timer.Stop if the timer is no longer needed.
+	// underlying [Timer] is not recovered by the garbage collector until the
+	// it fires. If efficiency is a concern, use [NewTimer] instead and call
+	// [Timer.Stop] if the timer is no longer needed.
 	After(d time.Duration) <-chan time.Time
 
 	// AfterFunc waits for the duration to elapse and then calls f in its own
-	// goroutine. It returns a Timer that can be used to cancel the call using
-	// its Stop method.
+	// goroutine. It returns a [Timer] that can be used to cancel the call using
+	// its [Timer.Stop] method.
 	AfterFunc(d time.Duration, fn func()) *Timer
 
 	// Nanotime returns the current time in nanoseconds.
 	Nanotime() int64
 
-	// NewStopwatch returns a new Stopwatch that uses the Clock for measuring
-	// time.
+	// NewStopwatch returns a new [Stopwatch] that uses the [Clock] for
+	// measuring time.
 	NewStopwatch() *Stopwatch
 
-	// NewTicker returns a new Ticker containing a channel that will send the
+	// NewTicker returns a new [Ticker] containing a channel that will send the
 	// current time on the channel after each tick. The period of the ticks is
 	// specified by the duration argument. The ticker will adjust the time
 	// interval or drop ticks to make up for slow receivers. The duration d
@@ -61,8 +61,8 @@ type Clock interface {
 	// to release associated resources.
 	NewTicker(d time.Duration) *Ticker
 
-	// NewTimer creates a new Timer that will send the current time on its
-	// channel after at least duration d.
+	// NewTimer creates a new [Timer] that will send the current time on its
+	// channel after at least d has elapsed.
 	NewTimer(d time.Duration) *Timer
 
 	// Now returns the current time. For wall clocks, this is the local time;
@@ -86,11 +86,11 @@ type Clock interface {
 	// negative or zero duration causes Sleep to return immediately.
 	Sleep(d time.Duration)
 
-	// Tick is a convenience wrapper for NewTicker providing access to the
+	// Tick is a convenience wrapper for [NewTicker] providing access to the
 	// ticking channel only. While Tick is useful for clients that have no need
-	// to shut down the Ticker, be aware that without a way to shut it down the
-	// underlying Ticker cannot be recovered by the garbage collector; it
-	// "leaks". Like NewTicker, Tick will panic if d <= 0.
+	// to shut down the [Ticker], be aware that without a way to shut it down
+	// the underlying Ticker cannot be recovered by the garbage collector; it
+	// "leaks". Like [NewTicker], Tick will panic if d <= 0.
 	Tick(time.Duration) <-chan time.Time
 
 	// Timestamp returns the current time in nanoseconds as a
@@ -98,7 +98,7 @@ type Clock interface {
 	Timestamp() chrono.Timestamp
 }
 
-// NewClock returns a new Clock based on the given options.
+// NewClock returns a new [Clock] based on the given options.
 func NewClock(opts ...Option) (Clock, error) {
 	options := DefaultOptions()
 	for _, opt := range opts {
@@ -113,7 +113,7 @@ func NewClock(opts ...Option) (Clock, error) {
 }
 
 // MustClock panics if the given error is not nil, otherwise it returns the
-// given clock.
+// given [Clock].
 func MustClock(clock Clock, err error) Clock {
 	if err != nil {
 		panic(err)
@@ -122,12 +122,12 @@ func MustClock(clock Clock, err error) Clock {
 	return clock
 }
 
-// NewMonotonicClock returns a new monotonic Clock.
+// NewMonotonicClock returns a new monotonic [Clock].
 func NewMonotonicClock() Clock {
 	return MustClock(NewClock(WithNanotimeFunc(DefaultNanotimeFunc())))
 }
 
-// NewWallClock returns a new wall Clock.
+// NewWallClock returns a new wall [Clock].
 func NewWallClock() Clock {
 	return MustClock(NewClock(WithTimeFunc(DefaultTimeFunc())))
 }

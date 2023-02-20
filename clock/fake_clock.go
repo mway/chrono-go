@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -32,11 +32,11 @@ import (
 var _ Clock = (*FakeClock)(nil)
 
 // A FakeClock is a manually-adjusted clock useful for mocking the flow of time
-// in tests. It does not keep time by itself: use Add, SetTime, or SetNanotime
-// functions to manage the clock's current time.
+// in tests. It does not keep time by itself: use [FakeClock.Add],
+// [FakeClock.SetTime], and related functions to manage the clock's time.
 //
-// Note that Timer- and Ticker-producing functions allocate internal types that
-// are never freed.
+// Note that functions which produce a [Timer] or [Ticker] allocate internal
+// types that are never freed.
 type FakeClock struct {
 	timers []*fakeTimer
 	now    atomic.Int64
@@ -44,7 +44,7 @@ type FakeClock struct {
 	clk    monotonicClock
 }
 
-// NewFakeClock creates a new FakeClock.
+// NewFakeClock creates a new [FakeClock].
 func NewFakeClock() *FakeClock {
 	c := &FakeClock{}
 	c.clk = monotonicClock{
@@ -55,7 +55,7 @@ func NewFakeClock() *FakeClock {
 	return c
 }
 
-// Add adds the given time.Duration to the clock's internal time.
+// Add adds d to the clock's internal time.
 func (c *FakeClock) Add(d time.Duration) {
 	c.checkTimers(c.now.Add(int64(d)))
 }
@@ -80,8 +80,8 @@ func (c *FakeClock) Nanotime() int64 {
 	return c.clk.Nanotime()
 }
 
-// NewTicker returns a new Ticker that receives time ticks every d. If d is not
-// greater than zero, NewTicker will panic.
+// NewTicker returns a new [Ticker] that receives time ticks every d. If d is not
+// greater than zero, [NewTicker] will panic.
 func (c *FakeClock) NewTicker(d time.Duration) *Ticker {
 	if d <= 0 {
 		panic("non-positive interval for FakeClock.NewTicker")
@@ -94,7 +94,7 @@ func (c *FakeClock) NewTicker(d time.Duration) *Ticker {
 	}
 }
 
-// NewTimer returns a new Timer that receives a time tick after d.
+// NewTimer returns a new [Timer] that receives a time tick after d.
 func (c *FakeClock) NewTimer(d time.Duration) *Timer {
 	x := c.addTimer(d, nil)
 	return &Timer{
@@ -103,23 +103,23 @@ func (c *FakeClock) NewTimer(d time.Duration) *Timer {
 	}
 }
 
-// Now returns the clock's internal time as time.Time.
+// Now returns the clock's internal time as a [time.Time].
 func (c *FakeClock) Now() time.Time {
 	return c.clk.Now()
 }
 
-// SetTime sets the clock to the given time.
+// SetTime sets the clock's time to t.
 func (c *FakeClock) SetTime(t time.Time) {
 	c.SetNanotime(t.UnixNano())
 }
 
-// SetNanotime sets the clock to the given time in nanoseconds.
+// SetNanotime sets the clock's time to ns.
 func (c *FakeClock) SetNanotime(ns int64) {
 	c.now.Store(ns)
 	c.checkTimers(ns)
 }
 
-// SetTimestamp sets the clock to ts.
+// SetTimestamp sets the clock's time to ts.
 func (c *FakeClock) SetTimestamp(ts chrono.Timestamp) {
 	c.SetNanotime(ts.UnixNano())
 }
@@ -152,7 +152,7 @@ func (c *FakeClock) Sleep(d time.Duration) {
 	<-timer.ch
 }
 
-// NewStopwatch returns a new Stopwatch that uses the current clock for
+// NewStopwatch returns a new [Stopwatch] that uses the current clock for
 // measuring time. The clock's current time is used as the stopwatch's epoch.
 func (c *FakeClock) NewStopwatch() *Stopwatch {
 	return newStopwatch(c)

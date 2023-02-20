@@ -1,4 +1,4 @@
-// Copyright (c) 2022 Matt Way
+// Copyright (c) 2023 Matt Way
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
@@ -35,12 +35,12 @@ type Recorder struct {
 	epoch atomic.Int64
 }
 
-// NewRecorder creates a new Recorder that uses the system's monotonic clock.
+// NewRecorder creates a new [Recorder] that uses the system's monotonic clock.
 func NewRecorder() *Recorder {
 	return NewRecorderWithClock(clock.NewMonotonicClock())
 }
 
-// NewRecorderWithClock returns a new Recorder that uses the given clock.
+// NewRecorderWithClock returns a new [Recorder] that uses the given clock.
 func NewRecorderWithClock(clk clock.Clock) *Recorder {
 	r := &Recorder{
 		clock: clk,
@@ -54,8 +54,8 @@ func (r *Recorder) Add(n int) {
 	r.count.Add(int64(n))
 }
 
-// Rate returns a Rate that represents the running count and time elapsed since
-// the Recorder's clock started.
+// Rate returns a [Rate] that represents the running count and time elapsed
+// since the recorder's clock started.
 func (r *Recorder) Rate() Rate {
 	return Rate{
 		count:   r.count.Load(),
@@ -63,7 +63,7 @@ func (r *Recorder) Rate() Rate {
 	}
 }
 
-// Reset returns the current Rate and resets the Recorder's running count and
+// Reset returns the current [Rate] and resets the recorder's running count and
 // epoch.
 func (r *Recorder) Reset() Rate {
 	var (
@@ -82,7 +82,7 @@ type Rate struct {
 	elapsed time.Duration
 }
 
-// Per returns the Rate's count over the given period of time.
+// Per returns the rate's count over the given period of time.
 func (r Rate) Per(d time.Duration) float64 {
 	return (float64(r.count) / float64(r.elapsed)) * float64(d)
 }
