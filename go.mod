@@ -3,6 +3,7 @@ module go.mway.dev/chrono
 go 1.18
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.7.2
 	go.mway.dev/math v0.2.1
 	go.uber.org/atomic v1.9.0
