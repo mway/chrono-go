@@ -24,6 +24,8 @@ package clock
 import (
 	"errors"
 	"time"
+
+	"go.mway.dev/chrono"
 )
 
 // ErrNoClockFunc is returned when creating a new Clock without a valid clock
@@ -76,6 +78,10 @@ type Clock interface {
 	// Nanotime()-ns.
 	SinceNanotime(ns int64) time.Duration
 
+	// SinceTimestamp returns the time elapsed since ts. It is shorthand for
+	// Timestamp()-ts.
+	SinceTimestamp(ts chrono.Timestamp) time.Duration
+
 	// Sleep pauses the current goroutine for at least the duration d. A
 	// negative or zero duration causes Sleep to return immediately.
 	Sleep(d time.Duration)
@@ -86,6 +92,10 @@ type Clock interface {
 	// underlying Ticker cannot be recovered by the garbage collector; it
 	// "leaks". Like NewTicker, Tick will panic if d <= 0.
 	Tick(time.Duration) <-chan time.Time
+
+	// Timestamp returns the current time in nanoseconds as a
+	// [chrono.Timestamp].
+	Timestamp() chrono.Timestamp
 }
 
 // NewClock returns a new Clock based on the given options.

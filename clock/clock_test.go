@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.mway.dev/chrono"
 	"go.mway.dev/chrono/clock"
 	"go.uber.org/atomic"
 )
@@ -241,6 +242,12 @@ func TestClock_Since(t *testing.T) {
 				t,
 				clk.Nanotime(),
 				clk.SinceNanotime(0),
+				float64(time.Second),
+			)
+			require.InEpsilon(
+				t,
+				clk.Timestamp().UnixNano(),
+				clk.SinceTimestamp(chrono.Timestamp(0)),
 				float64(time.Second),
 			)
 		})
