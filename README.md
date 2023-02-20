@@ -47,7 +47,7 @@ To start using a [`Clock`][clock-doc], first determine whether the goal is to
 
 The only difference between a wall clock and a monotonic clock is the time
 source being used, which in this implementation is either a [`TimeFunc`][timefunc-doc]
-or a [`NanotimeFunc`][nanotimefunc-doc]
+or a [`NanotimeFunc`][nanotimefunc-doc].
 
 After selecting a type of clock, simply construct and use it:
 

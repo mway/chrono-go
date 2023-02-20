@@ -30,18 +30,9 @@ import (
 
 var _ Clock = (*ThrottledClock)(nil)
 
-// A NanoFunc is a function that returns a nanosecond timestamp as an int64.
-type NanoFunc = func() int64
-
-// NewMonotonicNanoFunc returns a new, default NanoFunc that reports monotonic
-// system time as nanoseconds.
-func NewMonotonicNanoFunc() NanoFunc {
-	return chrono.Nanotime
-}
-
-// NewWallNanoFunc returns a new, default NanoFunc that reports wall time as
-// nanoseconds.
-func NewWallNanoFunc() NanoFunc {
+// DefaultWallNanotimeFunc returns a new, default [NanotimeFunc] that reports wall
+// time as nanoseconds.
+func DefaultWallNanotimeFunc() NanotimeFunc {
 	return func() int64 {
 		return time.Now().UnixNano()
 	}
@@ -50,7 +41,7 @@ func NewWallNanoFunc() NanoFunc {
 // ThrottledClock provides a simple interface to memoize repeated time syscalls
 // within a given threshold.
 type ThrottledClock struct {
-	nowfn    NanoFunc
+	nowfn    NanotimeFunc
 	done     chan struct{}
 	now      atomic.Int64
 	stopped  atomic.Bool
@@ -65,7 +56,10 @@ type ThrottledClock struct {
 // Note that interval should be tuned to be greater than the actual frequency
 // of calls to ThrottledClock.Nanos or ThrottledClock.Now (otherwise the clock
 // will generate more time calls than it is saving).
-func NewThrottledClock(nowfn NanoFunc, interval time.Duration) *ThrottledClock {
+func NewThrottledClock(
+	nowfn NanotimeFunc,
+	interval time.Duration,
+) *ThrottledClock {
 	c := &ThrottledClock{
 		nowfn:    nowfn,
 		done:     make(chan struct{}),
@@ -88,13 +82,13 @@ func NewThrottledClock(nowfn NanoFunc, interval time.Duration) *ThrottledClock {
 // NewMonotonicNanoFunc as its backing time function. See NewThrottledClock for
 // more information.
 func NewThrottledMonotonicClock(interval time.Duration) *ThrottledClock {
-	return NewThrottledClock(NewMonotonicNanoFunc(), interval)
+	return NewThrottledClock(DefaultNanotimeFunc(), interval)
 }
 
 // NewThrottledWallClock creates a new ThrottledClock that uses NewWallNanoFunc
 // as its backing time function. See NewThrottledClock for more information.
 func NewThrottledWallClock(interval time.Duration) *ThrottledClock {
-	return NewThrottledClock(NewWallNanoFunc(), interval)
+	return NewThrottledClock(DefaultWallNanotimeFunc(), interval)
 }
 
 // After returns a channel that receives the current time after d has elapsed.

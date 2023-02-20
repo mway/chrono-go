@@ -31,15 +31,15 @@ func BenchmarkThrottledClock(b *testing.B) {
 	var (
 		cases = []struct {
 			name  string
-			nowfn clock.NanoFunc
+			nowfn clock.NanotimeFunc
 		}{
 			{
 				name:  "mono",
-				nowfn: clock.NewMonotonicNanoFunc(),
+				nowfn: clock.DefaultNanotimeFunc(),
 			},
 			{
 				name:  "wall",
-				nowfn: clock.NewWallNanoFunc(),
+				nowfn: clock.DefaultWallNanotimeFunc(),
 			},
 		}
 		intervals = []time.Duration{
