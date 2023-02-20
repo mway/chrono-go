@@ -34,9 +34,6 @@ var _ Clock = (*FakeClock)(nil)
 // A FakeClock is a manually-adjusted clock useful for mocking the flow of time
 // in tests. It does not keep time by itself: use [FakeClock.Add],
 // [FakeClock.SetTime], and related functions to manage the clock's time.
-//
-// Note that functions which produce a [Timer] or [Ticker] allocate internal
-// types that are never freed.
 type FakeClock struct {
 	timers []*fakeTimer
 	now    atomic.Int64
@@ -202,7 +199,8 @@ func (c *FakeClock) checkTimers(now int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for i := 0; i < len(c.timers); /* noincr */ {
+	num := len(c.timers)
+	for i := 0; i < num; /* noincr */ {
 		if when := c.timers[i].when; when < 0 || when > now {
 			return
 		}
@@ -227,7 +225,10 @@ func (c *FakeClock) checkTimers(now int64) {
 		if i < len(c.timers)-1 {
 			copy(c.timers[i:], c.timers[i+1:])
 		}
-		c.timers = c.timers[:len(c.timers)-1]
+
+		c.timers[num-1] = nil
+		c.timers = c.timers[:num-1]
+		num--
 	}
 }
 
