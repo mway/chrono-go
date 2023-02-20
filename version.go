@@ -21,4 +21,4 @@
 package chrono
 
 // Version is the current version of the chrono package.
-const Version = "v0.4.0-dev"
+const Version = "v0.4.0"
