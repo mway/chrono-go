@@ -265,9 +265,16 @@ func (c *FakeClock) removeTimer(fake *fakeTimer) bool {
 		return false
 	}
 
-	// Ensure that the timer exists using its previous value. If not, add it.
+	// Find a candidate timer's index based on the original expiration.
 	pos := c.insertPosNosync(fake.when)
-	if c.timers[pos] != fake {
+
+	// Pathological case: insertPosNosync will always return {0,2} for [2]
+	if pos > 0 && len(c.timers) == 2 {
+		pos--
+	}
+
+	// Ensure that this is the expected timer.
+	if pos >= len(c.timers) || c.timers[pos] != fake {
 		return false
 	}
 

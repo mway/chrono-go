@@ -383,14 +383,31 @@ func TestFakeClock_ManyTimers(t *testing.T) {
 }
 
 func TestFakeClock_Timer_DoubleStop(t *testing.T) {
+	cases := [][]time.Duration{
+		{time.Second, 5 * time.Second},
+		{5 * time.Second, time.Second},
+		{time.Second, time.Second},
+		{time.Second, 2 * time.Second, 3 * time.Second},
+		{3 * time.Second, 2 * time.Second, time.Second},
+	}
+
 	var (
-		clk   = clock.NewFakeClock()
-		_     = clk.NewTimer(time.Hour)
-		timer = clk.NewTimer(time.Second)
+		clk    = clock.NewFakeClock()
+		timers []*clock.Timer
 	)
 
-	require.True(t, timer.Stop())
-	require.False(t, timer.Stop())
+	for _, durations := range cases {
+		for _, dur := range durations {
+			timers = append(timers, clk.NewTimer(dur))
+		}
+
+		for _, timer := range timers {
+			require.True(t, timer.Stop())
+			require.False(t, timer.Stop())
+		}
+
+		timers = nil
+	}
 }
 
 func TestFakeClock_Stopwatch(t *testing.T) {
