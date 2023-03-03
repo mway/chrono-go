@@ -24,7 +24,6 @@ import (
 	"sync"
 	"time"
 
-	"go.mway.dev/chrono"
 	"go.uber.org/atomic"
 )
 
@@ -162,12 +161,6 @@ func (c *ThrottledClock) SinceNanotime(ns int64) time.Duration {
 	return time.Duration(c.Nanotime() - ns)
 }
 
-// SinceTimestamp returns the time elapsed since ts. It is shorthand for
-// Timestamp()-ts.
-func (c *ThrottledClock) SinceTimestamp(ts chrono.Timestamp) time.Duration {
-	return time.Duration(c.Timestamp() - ts)
-}
-
 // Sleep puts the current goroutine to sleep for d. This method is not
 // throttled and uses Go's runtime timers.
 func (c *ThrottledClock) Sleep(d time.Duration) {
@@ -188,12 +181,6 @@ func (c *ThrottledClock) Stop() {
 func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {
 	//nolint:staticcheck
 	return time.Tick(d)
-}
-
-// Timestamp returns the current time in nanoseconds as a
-// [chrono.Timestamp].
-func (c *ThrottledClock) Timestamp() chrono.Timestamp {
-	return chrono.Timestamp(c.now.Load())
 }
 
 func (c *ThrottledClock) run(interval time.Duration) {

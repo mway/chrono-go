@@ -22,8 +22,6 @@ package clock
 
 import (
 	"time"
-
-	"go.mway.dev/chrono"
 )
 
 var _ Clock = (*monotonicClock)(nil)
@@ -86,10 +84,6 @@ func (c *monotonicClock) SinceNanotime(ns int64) time.Duration {
 	return time.Duration(c.Nanotime() - ns)
 }
 
-func (c *monotonicClock) SinceTimestamp(ts chrono.Timestamp) time.Duration {
-	return time.Duration(c.Timestamp() - ts)
-}
-
 func (c *monotonicClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
@@ -97,8 +91,4 @@ func (c *monotonicClock) Sleep(d time.Duration) {
 func (c *monotonicClock) Tick(d time.Duration) <-chan time.Time {
 	//nolint:staticcheck
 	return time.Tick(d)
-}
-
-func (c *monotonicClock) Timestamp() chrono.Timestamp {
-	return chrono.Timestamp(c.fn())
 }

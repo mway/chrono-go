@@ -24,8 +24,6 @@ package clock
 import (
 	"errors"
 	"time"
-
-	"go.mway.dev/chrono"
 )
 
 // ErrNoClockFunc is returned when creating a new [Clock] without a valid
@@ -41,7 +39,7 @@ type Clock interface {
 	// [Timer.Stop] if the timer is no longer needed.
 	After(d time.Duration) <-chan time.Time
 
-	// AfterFunc waits for the duration to elapse and then calls f in its own
+	// AfterFunc waits for the duration to elapse and then calls fn in its own
 	// goroutine. It returns a [Timer] that can be used to cancel the call using
 	// its [Timer.Stop] method.
 	AfterFunc(d time.Duration, fn func()) *Timer
@@ -78,10 +76,6 @@ type Clock interface {
 	// Nanotime()-ns.
 	SinceNanotime(ns int64) time.Duration
 
-	// SinceTimestamp returns the time elapsed since ts. It is shorthand for
-	// Timestamp()-ts.
-	SinceTimestamp(ts chrono.Timestamp) time.Duration
-
 	// Sleep pauses the current goroutine for at least the duration d. A
 	// negative or zero duration causes Sleep to return immediately.
 	Sleep(d time.Duration)
@@ -92,10 +86,6 @@ type Clock interface {
 	// the underlying Ticker cannot be recovered by the garbage collector; it
 	// "leaks". Like [NewTicker], Tick will panic if d <= 0.
 	Tick(time.Duration) <-chan time.Time
-
-	// Timestamp returns the current time in nanoseconds as a
-	// [chrono.Timestamp].
-	Timestamp() chrono.Timestamp
 }
 
 // NewClock returns a new [Clock] based on the given options.

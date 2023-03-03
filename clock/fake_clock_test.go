@@ -80,20 +80,6 @@ func TestFakeClock_SetNanotime(t *testing.T) {
 	}
 }
 
-func TestFakeClock_SetTimestamp(t *testing.T) {
-	clk := clock.NewFakeClock()
-
-	for i := int64(1); i <= 1000; i++ {
-		clk.SetTimestamp(chrono.Timestamp(i))
-		requireClockIs(t, i, clk)
-	}
-
-	for i := int64(1000); i > 0; i-- {
-		clk.SetTimestamp(chrono.Timestamp(i))
-		requireClockIs(t, i, clk)
-	}
-}
-
 func TestFakeClock_After(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
@@ -433,7 +419,6 @@ func TestFakeClock_Stopwatch(t *testing.T) {
 func requireClockSince(t *testing.T, expect int64, since int64, clk *clock.FakeClock) {
 	require.EqualValues(t, expect, clk.Since(time.Unix(0, since)))
 	require.EqualValues(t, expect, clk.SinceNanotime(since))
-	require.EqualValues(t, expect, clk.SinceTimestamp(chrono.Timestamp(since)))
 }
 
 func requireClockIs(t *testing.T, expect int64, clk *clock.FakeClock) {

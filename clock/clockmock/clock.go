@@ -9,7 +9,6 @@ import (
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	chrono "go.mway.dev/chrono"
 	clock "go.mway.dev/chrono/clock"
 )
 
@@ -162,20 +161,6 @@ func (mr *MockClockMockRecorder) SinceNanotime(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SinceNanotime", reflect.TypeOf((*MockClock)(nil).SinceNanotime), arg0)
 }
 
-// SinceTimestamp mocks base method.
-func (m *MockClock) SinceTimestamp(arg0 chrono.Timestamp) time.Duration {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SinceTimestamp", arg0)
-	ret0, _ := ret[0].(time.Duration)
-	return ret0
-}
-
-// SinceTimestamp indicates an expected call of SinceTimestamp.
-func (mr *MockClockMockRecorder) SinceTimestamp(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SinceTimestamp", reflect.TypeOf((*MockClock)(nil).SinceTimestamp), arg0)
-}
-
 // Sleep mocks base method.
 func (m *MockClock) Sleep(arg0 time.Duration) {
 	m.ctrl.T.Helper()
@@ -200,18 +185,4 @@ func (m *MockClock) Tick(arg0 time.Duration) <-chan time.Time {
 func (mr *MockClockMockRecorder) Tick(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tick", reflect.TypeOf((*MockClock)(nil).Tick), arg0)
-}
-
-// Timestamp mocks base method.
-func (m *MockClock) Timestamp() chrono.Timestamp {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Timestamp")
-	ret0, _ := ret[0].(chrono.Timestamp)
-	return ret0
-}
-
-// Timestamp indicates an expected call of Timestamp.
-func (mr *MockClockMockRecorder) Timestamp() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Timestamp", reflect.TypeOf((*MockClock)(nil).Timestamp))
 }

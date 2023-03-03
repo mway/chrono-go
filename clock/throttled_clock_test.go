@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"go.mway.dev/chrono"
 	"go.mway.dev/chrono/clock"
 	"go.mway.dev/math"
 	"go.uber.org/atomic"
@@ -184,7 +183,6 @@ func TestThrottledClock_Since(t *testing.T) {
 
 	require.Equal(t, 23*time.Nanosecond, clk.Since(time.Unix(0, 100)))
 	require.Equal(t, 23*time.Nanosecond, clk.SinceNanotime(100))
-	require.Equal(t, 23*time.Nanosecond, clk.SinceTimestamp(chrono.Timestamp(100)))
 }
 
 func TestThrottledClock_Internals(t *testing.T) {

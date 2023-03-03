@@ -22,8 +22,6 @@ package clock
 
 import (
 	"time"
-
-	"go.mway.dev/chrono"
 )
 
 var _ Clock = (*wallClock)(nil)
@@ -86,10 +84,6 @@ func (c *wallClock) SinceNanotime(ts int64) time.Duration {
 	return time.Duration(c.Nanotime() - ts)
 }
 
-func (c *wallClock) SinceTimestamp(ts chrono.Timestamp) time.Duration {
-	return time.Duration(c.Timestamp() - ts)
-}
-
 func (c *wallClock) Sleep(d time.Duration) {
 	time.Sleep(d)
 }
@@ -97,8 +91,4 @@ func (c *wallClock) Sleep(d time.Duration) {
 func (c *wallClock) Tick(d time.Duration) <-chan time.Time {
 	//nolint:staticcheck
 	return time.Tick(d)
-}
-
-func (c *wallClock) Timestamp() chrono.Timestamp {
-	return chrono.Timestamp(c.fn().UnixNano())
 }

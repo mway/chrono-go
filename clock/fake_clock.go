@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"go.mway.dev/chrono"
 	"go.uber.org/atomic"
 )
 
@@ -116,11 +115,6 @@ func (c *FakeClock) SetNanotime(ns int64) {
 	c.checkTimers(ns)
 }
 
-// SetTimestamp sets the clock's time to ts.
-func (c *FakeClock) SetTimestamp(ts chrono.Timestamp) {
-	c.SetNanotime(ts.UnixNano())
-}
-
 // Since returns the amount of time that elapsed between the clock's internal
 // time and t.
 func (c *FakeClock) Since(t time.Time) time.Duration {
@@ -131,12 +125,6 @@ func (c *FakeClock) Since(t time.Time) time.Duration {
 // internal time and ns.
 func (c *FakeClock) SinceNanotime(ns int64) time.Duration {
 	return time.Duration(c.Nanotime() - ns)
-}
-
-// SinceTimestamp returns the time elapsed since ts. It is shorthand for
-// Timestamp()-ts.
-func (c *FakeClock) SinceTimestamp(ts chrono.Timestamp) time.Duration {
-	return time.Duration(c.Timestamp() - ts)
 }
 
 // Sleep blocks for d.
@@ -163,12 +151,6 @@ func (c *FakeClock) Tick(d time.Duration) <-chan time.Time {
 		panic("non-positive interval for FakeClock.Tick")
 	}
 	return c.NewTicker(d).C
-}
-
-// Timestamp returns the current time in nanoseconds as a
-// [chrono.Timestamp].
-func (c *FakeClock) Timestamp() chrono.Timestamp {
-	return chrono.Timestamp(c.clk.Nanotime())
 }
 
 func (c *FakeClock) addTicker(d time.Duration) *fakeTimer {
