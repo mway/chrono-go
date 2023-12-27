@@ -21,6 +21,8 @@
 package clock_test
 
 import (
+	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -150,10 +152,14 @@ func TestFakeClock_NewTimer(t *testing.T) {
 
 	// Cause the timer's tick channel to fill, and then tick again.
 	clk.Add(time.Second)
+
+	// Because the last tick wasn't consumed, the reported timestamp will be
+	// in the past.
+	want := clk.Nanotime()
 	timer.Reset(time.Second)
 	clk.Add(time.Second)
 	ts := requireTick(t, timer.C)
-	requireTimeIs(t, clk.Nanotime(), ts)
+	requireTimeIs(t, want, ts)
 
 	require.False(t, timer.Stop())
 	requireNoTick(t, timer.C)
@@ -217,6 +223,63 @@ func TestFakeClock_NewTicker(t *testing.T) {
 	require.Panics(t, func() {
 		clk.NewTicker(0)
 	})
+}
+
+func TestFakeClock_Ticker_Goroutine(t *testing.T) {
+	var (
+		clk   = clock.NewFakeClock()
+		ticks = make(chan struct{}, 10)
+		ready = make(chan struct{})
+		wg    sync.WaitGroup
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for i := 0; i < cap(ticks); i++ {
+		wg.Add(1)
+		go func() {
+			ticker := clk.NewTicker(time.Second)
+			defer ticker.Stop()
+
+			ready <- struct{}{}
+
+			for {
+				select {
+				case <-ticker.C:
+				case <-ctx.Done():
+					return
+				}
+
+				select {
+				case ticks <- struct{}{}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	maxWait := time.NewTicker(5 * time.Second)
+	defer maxWait.Stop()
+
+	for i := 0; i < cap(ticks); i++ {
+		select {
+		case <-ready:
+		case <-maxWait.C:
+			require.FailNow(t, "timed out waiting for ticker ticks")
+		}
+	}
+
+	for i := 0; i < cap(ticks); i++ {
+		clk.Add(time.Second)
+
+		select {
+		case <-ticks:
+		case <-maxWait.C:
+			require.FailNow(t, "timed out waiting for ticker ticks")
+		}
+	}
 }
 
 func TestFakeClock_Ticker_Zeroes(t *testing.T) {

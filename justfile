@@ -11,6 +11,9 @@ tidy:
 test PKG="./..." *ARGS="":
     go test -v -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
 
+tests PKG="./..." *ARGS="":
+    gotestsum -f dots -- -v -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
+
 cover: test
     go tool cover -html {{ coverprofile }}
 

@@ -326,13 +326,8 @@ func (f *fakeTimer) removeTimer() bool {
 }
 
 func tick(ch chan time.Time, ns int64) {
-	ts := time.Unix(0, ns)
-	for {
-		select {
-		case ch <- ts:
-			return
-		default:
-			<-ch
-		}
+	select {
+	case ch <- time.Unix(0, ns):
+	default:
 	}
 }
