@@ -225,6 +225,7 @@ func TestFakeClock_NewTicker(t *testing.T) {
 	})
 }
 
+//nolint:gocyclo
 func TestFakeClock_Ticker_Goroutine(t *testing.T) {
 	var (
 		clk   = clock.NewFakeClock()
