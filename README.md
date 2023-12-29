@@ -15,8 +15,6 @@
 provides:
 
 - **go.mway.dev/chrono**
-  - A lightweight, integer [`Timestamp`][timestamp-doc] type that is
-    callsite-compatible with [`time.Time`][time-doc]
   - An exported [`Nanotime`][nanotime-doc] function, which provides access to
     the underlying system clock (via [`runtime.nanotime`][nanotime-stdlib])
 - **go.mway.dev/chrono/clock**
@@ -27,6 +25,9 @@ provides:
   - A [`FakeClock`][fake-clock-doc] implementation, to support mocking time
   - A lightweight [`Stopwatch`][stopwatch-doc] for trivially (and continuously)
     measuring elapsed time
+- **go.mway.dev/periodic**
+  - A [`Handle`][periodic-handler-doc] to manage functions that are run
+    periodically via [`Start`][periodic-start-doc]
 - **go.mway.dev/chrono/rate**
   - A [`Recorder`][recorder-doc] that performs simple, empirical rate
     calculation, optionally against a custom clock
@@ -65,13 +66,12 @@ func main() {
     clk       = clock.NewWallClock()
     now       = clk.Now()       // time.Time
     nanos     = clk.Nanotime()  // int64
-    timestamp = clk.Timestamp() // chrono.Timestamp
     stopwatch = clk.NewStopwatch()
     ticker    = clk.NewTicker(time.Second)
     timer     = clk.NewTimer(3*time.Second)
   )
 
-  fmt.Printf("It is now: %s (~%d, ~%d)\n", now, nanos, timestamp)
+  fmt.Printf("It is now: %s (~%d)\n", now, nanos)
 
   func() {
     for {
@@ -126,13 +126,14 @@ internally cached time.
 
 Pull requests are welcome, and all feedback is appreciated!
 
-[timestamp-doc]: https://pkg.go.dev/go.mway.dev/chrono#Timestamp
 [time-pkg-doc]: https://pkg.go.dev/time
 [time-doc]: https://pkg.go.dev/time#Time
 [nanotime-doc]: https://pkg.go.dev/go.mway.dev/chrono#Nanotime
 [nanotime-stdlib]: https://cs.opensource.google/go/go/+/refs/tags/go1.20.1:src/runtime/time_nofake.go;l=18-20
 [clock-doc]: https://pkg.go.dev/go.mway.dev/chrono/clock#Clock
 [throttled-clock-doc]: https://pkg.go.dev/go.mway.dev/chrono/clock#ThrottledClock
+[periodic-handle-doc]: https://pkg.go.dev/go.mway.dev/chrono/periodic#Handle
+[periodic-start-doc]: https://pkg.go.dev/go.mway.dev/chrono/periodic#Start
 [fake-clock-doc]: https://pkg.go.dev/go.mway.dev/chrono/clock#FakeClock
 [stopwatch-doc]: https://pkg.go.dev/go.mway.dev/chrono/clock#Stopwatch
 [recorder-doc]: https://pkg.go.dev/go.mway.dev/chrono/rate#Recorder
