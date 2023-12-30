@@ -2,30 +2,50 @@ name: Go
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
+    tags: ["v*"]
   pull_request:
-    branches: [ main, master ]
+    branches: ["*"]
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [1.20.x, 1.21.x]
+        include:
+          - go: 1.21.x
     steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.18
-
-    - name: Build
-      run: go build -v ./...
-
-    - name: Test
-      run: go test -v -race -coverprofile cover.out ./...
-      
-    - name: Prepare Coverage
-      run: go tool cover -html=cover.out -o cover.html
-
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v3.0.0
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+          cache-dependency-path: "**/go.sum"
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v -race -coverprofile cover.out ./...
+      - name: Prepare Coverage
+        run: go tool cover -html=cover.out -o cover.html
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.x
+          cache-dependency-path: "**/go.sum"
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
