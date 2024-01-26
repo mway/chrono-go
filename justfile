@@ -1,17 +1,9 @@
 #!/usr/bin/env just --justfile
 
 coverprofile := "cover.out"
-curbranch := `git symbolic-ref --short HEAD`
 
 default:
     @just --list | grep -v default
-
-tidy:
-    go mod tidy
-
-flow BRANCH:
-    git checkout -b {{ BRANCH }} || git checkout {{ BRANCH }}
-    git branch -u "{{ curbranch }}"
 
 test PKG="./..." *ARGS="":
     go test -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
