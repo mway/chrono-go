@@ -29,16 +29,13 @@ import (
 
 func BenchmarkThrottledClock(b *testing.B) {
 	var (
-		cases = []struct {
-			name  string
+		cases = map[string]struct {
 			nowfn clock.NanotimeFunc
 		}{
-			{
-				name:  "mono",
+			"mono": {
 				nowfn: clock.DefaultNanotimeFunc(),
 			},
-			{
-				name:  "wall",
+			"wall": {
 				nowfn: clock.DefaultWallNanotimeFunc(),
 			},
 		}
@@ -54,8 +51,8 @@ func BenchmarkThrottledClock(b *testing.B) {
 		nanos int64
 	)
 
-	for _, tt := range cases {
-		b.Run(tt.name, func(b *testing.B) {
+	for name, tt := range cases {
+		b.Run(name, func(b *testing.B) {
 			for _, dur := range intervals {
 				b.Run(dur.String(), func(b *testing.B) {
 					clk := clock.NewThrottledClock(tt.nowfn, dur)

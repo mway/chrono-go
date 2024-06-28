@@ -21,7 +21,7 @@
 package clock
 
 import (
-	_ "github.com/golang/mock/mockgen/model" //nolint:revive
+	_ "go.uber.org/mock/mockgen/model" // for mockgen
 )
 
 //go:generate mockgen -package clockmock -destination clockmock/clock.go go.mway.dev/chrono/clock Clock
