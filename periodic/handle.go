@@ -30,7 +30,7 @@ import (
 )
 
 // A Func is a function that can be run periodically. A Func must abide by ctx.
-type Func func(ctx context.Context)
+type Func = func(ctx context.Context)
 
 // A Handle manages a [Func] that is running periodically.
 type Handle struct {
@@ -72,11 +72,23 @@ func StartWithContext(
 	h.wg.Add(1)
 	go func() {
 		defer h.wg.Done()
-		h.run(period, ready)
+		h.runLoop(period, ready)
 	}()
 
 	<-ready
 	return h
+}
+
+// Run runs the underlying [Func] with h's own [context.Context]. This call
+// does not affect the period at which h is already calling the func.
+func (h *Handle) Run() {
+	h.RunWithContext(h.ctx)
+}
+
+// RunWithContext runs the underlying [Func] with ctx. This call does not
+// affect the period at which h is already calling the func.
+func (h *Handle) RunWithContext(ctx context.Context) {
+	h.fn(ctx)
 }
 
 // Stop stops the [Func] being managed by h and waits for it to exit.
@@ -85,7 +97,7 @@ func (h *Handle) Stop() {
 	h.wg.Wait()
 }
 
-func (h *Handle) run(period time.Duration, ready chan<- struct{}) {
+func (h *Handle) runLoop(period time.Duration, ready chan<- struct{}) {
 	var tick <-chan time.Time
 	if period > 0 {
 		ticker := h.clock.NewTicker(period)
@@ -110,7 +122,7 @@ func (h *Handle) run(period time.Duration, ready chan<- struct{}) {
 			default:
 			}
 
-			h.fn(h.ctx)
+			h.RunWithContext(h.ctx)
 		}
 	}
 }

@@ -193,7 +193,7 @@ func (c *FakeClock) checkTimers(now int64) {
 		if c.timers[i].fn != nil {
 			go c.timers[i].fn()
 		} else {
-			tick(c.timers[i].ch, c.timers[i].when)
+			tick(c.timers[i].ch, now)
 		}
 
 		// If this is a ticker, extend when by period.

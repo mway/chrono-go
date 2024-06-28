@@ -22,12 +22,14 @@ package periodic_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.mway.dev/chrono/clock"
 	"go.mway.dev/chrono/periodic"
+	"go.mway.dev/x/channels"
 )
 
 func TestStart(t *testing.T) {
@@ -213,4 +215,46 @@ func TestStartWithContext_ContextPreCanceled(t *testing.T) {
 			clk.Add(time.Second)
 		}
 	}
+}
+
+func TestHandle_Run(t *testing.T) {
+	var (
+		called = make(chan struct{}, 1)
+		calls  atomic.Int64
+		clk    = clock.NewFakeClock()
+		handle = periodic.Start(
+			time.Second,
+			func(ctx context.Context) {
+				select {
+				case called <- struct{}{}:
+					calls.Add(1)
+				case <-ctx.Done():
+				}
+			},
+			periodic.WithClock(clk),
+		)
+	)
+
+	defer handle.Stop()
+
+	for i := 0; i < 3; i++ {
+		handle.Run()
+		clk.Add(time.Second)
+		requireRecvWithTimeout(t, called, time.Second)
+		requireRecvWithTimeout(t, called, time.Second)
+		require.EqualValues(t, (i+1)*2, calls.Load())
+	}
+}
+
+func recvWithTimeout[T any](ch <-chan T, timeout time.Duration) bool {
+	_, ok := channels.RecvWithTimeout(context.Background(), ch, timeout)
+	return ok
+}
+
+func requireRecvWithTimeout[T any](
+	t *testing.T,
+	ch <-chan T,
+	timeout time.Duration,
+) {
+	require.True(t, recvWithTimeout(ch, timeout))
 }
