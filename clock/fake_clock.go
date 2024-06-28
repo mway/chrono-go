@@ -34,10 +34,10 @@ var _ Clock = (*FakeClock)(nil)
 // in tests. It does not keep time by itself: use [FakeClock.Add],
 // [FakeClock.SetTime], and related functions to manage the clock's time.
 type FakeClock struct {
+	clk    monotonicClock
 	timers []*fakeTimer
 	now    atomic.Int64
 	mu     sync.Mutex
-	clk    monotonicClock
 }
 
 // NewFakeClock creates a new [FakeClock].

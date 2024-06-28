@@ -8,6 +8,7 @@ require (
 	go.mway.dev/math v0.2.1
 	go.uber.org/atomic v1.9.0
 	go.uber.org/goleak v1.1.12
+	go.uber.org/mock v0.4.0
 )
 
 require (
