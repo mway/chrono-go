@@ -19,7 +19,7 @@ jobs:
         go: [stable, oldstable]
         include:
           - go: stable
-            golangci: v1.58
+            golangci: v2.1.6
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
         run: go test -v -race -coverprofile cover.out ./...
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         if: matrix.golangci
         with:
           version: ${{ matrix.golangci }}

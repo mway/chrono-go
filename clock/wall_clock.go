@@ -89,6 +89,5 @@ func (c *wallClock) Sleep(d time.Duration) {
 }
 
 func (c *wallClock) Tick(d time.Duration) <-chan time.Time {
-	//nolint:staticcheck
 	return time.Tick(d)
 }

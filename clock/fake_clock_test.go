@@ -480,7 +480,12 @@ func TestFakeClock_Stopwatch(t *testing.T) {
 	require.Equal(t, time.Second, stopwatch.Elapsed())
 }
 
-func requireClockSince(t *testing.T, expect int64, since int64, clk *clock.FakeClock) {
+func requireClockSince(
+	t *testing.T,
+	expect int64,
+	since int64,
+	clk *clock.FakeClock,
+) {
 	require.EqualValues(t, expect, clk.Since(time.Unix(0, since)))
 	require.EqualValues(t, expect, clk.SinceNanotime(since))
 }

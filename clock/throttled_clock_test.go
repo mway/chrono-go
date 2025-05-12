@@ -51,16 +51,24 @@ func TestThrottledClock_Constructors(t *testing.T) {
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
 			var (
-				clock     = tt.clockFn(time.Millisecond)
-				prevNanos = clock.Nanotime()
-				prevTime  = clock.Now()
+				clk       = tt.clockFn(time.Millisecond)
+				prevNanos = clk.Nanotime()
+				prevTime  = clk.Now()
 			)
-			defer clock.Stop()
+			defer clk.Stop()
 
-			waitForChange(t, clock, prevNanos)
+			waitForChange(t, clk, prevNanos)
 
-			require.True(t, clock.Nanotime() > prevNanos, "nanotime did not increase")
-			require.True(t, clock.Now().After(prevTime), "time did not increase")
+			require.True(
+				t,
+				clk.Nanotime() > prevNanos,
+				"nanotime did not increase",
+			)
+			require.True(
+				t,
+				clk.Now().After(prevTime),
+				"time did not increase",
+			)
 		})
 	}
 }

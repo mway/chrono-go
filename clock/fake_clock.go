@@ -273,7 +273,7 @@ func (c *FakeClock) insertPosNosync(when int64) int {
 	// https://cs.opensource.google/go/go/+/refs/tags/go1.18.1:src/sort/search.go;l=59-74
 	i, j := 0, len(c.timers)
 	for i < j {
-		h := int(uint(i+j) >> 1)
+		h := int(uint(i+j) >> 1) //nolint:gosec
 		if cur := c.timers[i].when; cur >= 0 && cur < when {
 			i = h + 1
 		} else {

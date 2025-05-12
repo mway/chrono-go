@@ -170,7 +170,7 @@ func (c *ThrottledClock) Sleep(d time.Duration) {
 // Stop stops the clock. Note that this has no effect on currently-running
 // timers.
 func (c *ThrottledClock) Stop() {
-	if c.stopped.CAS(false, true) {
+	if c.stopped.CompareAndSwap(false, true) {
 		close(c.done)
 	}
 	c.wg.Wait()
@@ -179,7 +179,6 @@ func (c *ThrottledClock) Stop() {
 // Tick returns a new channel that receives time ticks every d. It is
 // equivalent to writing c.NewTicker(d).C().
 func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {
-	//nolint:staticcheck
 	return time.Tick(d)
 }
 
