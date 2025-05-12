@@ -31,43 +31,43 @@ import (
 
 func TestRecorder(t *testing.T) {
 	var (
-		clk      = clock.NewFakeClock()
-		recorder = rate.NewRecorderWithClock(clk)
+		clk = clock.NewFakeClock()
+		rec = rate.NewRecorderWithClock(clk)
 	)
 
 	// A basic rate of 1M/s.
 	clk.Add(time.Second)
-	recorder.Add(1_000_000)
-	rate := recorder.Rate()
-	require.EqualValues(t, 1_000_000, rate.Per(time.Second))
+	rec.Add(1_000_000)
+	r := rec.Rate()
+	require.EqualValues(t, 1_000_000, r.Per(time.Second))
 
 	// Add another million without updating the clock, for a new rate of 2M/s.
-	recorder.Add(1_000_000)
-	rate = recorder.Rate()
-	require.EqualValues(t, 2_000_000, rate.Per(time.Second))
-	require.EqualValues(t, 4_000_000, rate.Per(2*time.Second))
-	require.EqualValues(t, 1_000_000, rate.Per(500*time.Millisecond))
+	rec.Add(1_000_000)
+	r = rec.Rate()
+	require.EqualValues(t, 2_000_000, r.Per(time.Second))
+	require.EqualValues(t, 4_000_000, r.Per(2*time.Second))
+	require.EqualValues(t, 1_000_000, r.Per(500*time.Millisecond))
 
 	// Add another second to the clock, doubling the amount of time that has
 	// elapsed; the rate should drop by half.
 	clk.Add(time.Second)
-	rate = recorder.Rate()
-	require.EqualValues(t, 1_000_000, rate.Per(time.Second))
-	require.EqualValues(t, 2_000_000, rate.Per(2*time.Second))
-	require.EqualValues(t, 10_000_000, rate.Per(10*time.Second))
+	r = rec.Rate()
+	require.EqualValues(t, 1_000_000, r.Per(time.Second))
+	require.EqualValues(t, 2_000_000, r.Per(2*time.Second))
+	require.EqualValues(t, 10_000_000, r.Per(10*time.Second))
 
 	// Reset the timer to ensure that it starts fresh.
-	recorder.Reset()
-	recorder.Add(1_000_000)
+	rec.Reset()
+	rec.Add(1_000_000)
 	clk.Add(1000 * time.Second)
-	rate = recorder.Reset()
-	require.EqualValues(t, 1_000, rate.Per(time.Second))
+	r = rec.Reset()
+	require.EqualValues(t, 1_000, r.Per(time.Second))
 
 	// Get a new rate after having called TakeRate to ensure that it's fresh.
-	recorder.Add(1_000_000)
+	rec.Add(1_000_000)
 	clk.Add(time.Second)
-	rate = recorder.Rate()
-	require.EqualValues(t, 1_000_000, rate.Per(time.Second))
+	r = rec.Rate()
+	require.EqualValues(t, 1_000_000, r.Per(time.Second))
 }
 
 func TestRecorderRealTime(t *testing.T) {
@@ -75,6 +75,6 @@ func TestRecorderRealTime(t *testing.T) {
 	recorder.Reset()
 	recorder.Add(1_000_000)
 
-	rate := recorder.Reset()
-	require.True(t, rate.Per(time.Nanosecond) > 0.0)
+	r := recorder.Reset()
+	require.True(t, r.Per(time.Nanosecond) > 0.0)
 }

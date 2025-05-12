@@ -1,57 +1,140 @@
+version: "2"
 run:
-  timeout: 5m
+  modules-download-mode: readonly
   issues-exit-code: 1
   tests: true
-  skip-dirs-use-default: true
-  modules-download-mode: readonly
-
 output:
   formats:
-    - format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
   enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
     - dogsled
     - errcheck
-    - goconst
-    - gocyclo
-    - gofumpt
-    - goimports
-    - gosimple
+    - exhaustive
+    - forbidigo
+    - gocritic
+    - gosec
     - govet
+    - importas
     - ineffassign
-    - lll
+    # - intrange  # TODO(mway): Enable
     - misspell
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nolintlint
+    - prealloc
+    - predeclared
+    - recvcheck
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
-
-linters-settings:
-  dogsled:
-    max-blank-identifiers: 2
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  gocyclo:
-    min-complexity: 10
-  govet:
-    enable-all: true
-  lll:
-    line-length: 100
-  misspell:
-    locale: US
-
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+  settings:
+    dogsled:
+      max-blank-identifiers: 2
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        - appendAssign
+        - appendCombine
+        - argOrder
+        - badCond
+        - badLock
+        - badRegexp
+        - badSorting
+        - badSyncOnceFunc
+        - boolExprSimplify
+        - builtinShadow
+        - builtinShadowDecl
+        - captLocal
+        - caseOrder
+        - commentFormatting
+        - defaultCaseOrder
+        - deferInLoop
+        - deferUnlambda
+        - dupImport
+        - dupSubExpr
+        - elseif
+        - exposedSyncMutex
+        - hugeParam
+        - ifElseChain
+        - importShadow
+        - indexAlloc
+        - initClause
+        - mapKey
+        - methodExprCall
+        - preferStringWriter
+        - preferWriteByte
+        - rangeExprCopy
+        - rangeValCopy
+        - redundantSprint
+        - regexpPattern
+        - regexpSimplify
+        - singleCaseSwitch
+        - sloppyReassign
+        - sloppyTypeAssert
+        - todoCommentWithoutDetail
+        - typeDefFirst
+        - typeSwitchVar
+        - typeUnparen
+        - underef
+        - unnecessaryBlock
+        - unnecessaryDefer
+        - unslice
+    gocyclo:
+      min-complexity: 10
+    govet:
+      enable-all: true
+    lll:
+      line-length: 100
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - lll
+        source: '^//go:generate '
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-rules:
-    - linters:
-        - lll
-      source: "^//go:generate "
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
   new: true
+formatters:
+  enable:
+    - golines
+    - gofumpt
+  settings:
+    golines:
+      max-len: 79
+      tab-len: 4
+      reformat-tags: false
+      chain-split-dots: true
+    gofumpt:
+      module-path: go.mway.dev/chrono
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

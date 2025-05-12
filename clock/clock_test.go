@@ -88,7 +88,9 @@ func TestNewClock_Funcs(t *testing.T) {
 			expectNanotime int64
 		}{
 			"with nanotime func": {
-				opts:           []clock.Option{clock.WithNanotimeFunc(nanotimeFunc)},
+				opts: []clock.Option{
+					clock.WithNanotimeFunc(nanotimeFunc),
+				},
 				expectNanotime: nanotimeFunc(),
 			},
 			"with nanotime func options": {

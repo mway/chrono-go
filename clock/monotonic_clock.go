@@ -89,6 +89,5 @@ func (c *monotonicClock) Sleep(d time.Duration) {
 }
 
 func (c *monotonicClock) Tick(d time.Duration) <-chan time.Time {
-	//nolint:staticcheck
 	return time.Tick(d)
 }
