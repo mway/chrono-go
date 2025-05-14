@@ -19,12 +19,14 @@ linters:
     - errcheck
     - exhaustive
     - forbidigo
+    - goconst
     - gocritic
+    - gocyclo
     - gosec
     - govet
     - importas
     - ineffassign
-    # - intrange  # TODO(mway): Enable
+    - lll
     - misspell
     - nilerr
     - nilnesserr
@@ -41,6 +43,7 @@ linters:
     - usestdlibvars
     - wastedassign
     - whitespace
+    # - intrange  # TODO(mway): Enable
   settings:
     dogsled:
       max-blank-identifiers: 2
@@ -103,7 +106,7 @@ linters:
     govet:
       enable-all: true
     lll:
-      line-length: 100
+      line-length: 79
     misspell:
       locale: US
   exclusions:

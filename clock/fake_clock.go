@@ -76,8 +76,8 @@ func (c *FakeClock) Nanotime() int64 {
 	return c.clk.Nanotime()
 }
 
-// NewTicker returns a new [Ticker] that receives time ticks every d. If d is not
-// greater than zero, [NewTicker] will panic.
+// NewTicker returns a new [Ticker] that receives time ticks every d. If d is
+// not greater than zero, [NewTicker] will panic.
 func (c *FakeClock) NewTicker(d time.Duration) *Ticker {
 	if d <= 0 {
 		panic("non-positive interval for FakeClock.NewTicker")
@@ -269,8 +269,7 @@ func (c *FakeClock) removeTimer(fake *fakeTimer) bool {
 }
 
 func (c *FakeClock) insertPosNosync(when int64) int {
-	// Inline the stdlib search for parity. Ref:
-	// https://cs.opensource.google/go/go/+/refs/tags/go1.18.1:src/sort/search.go;l=59-74
+	// Inline the stdlib search for parity.
 	i, j := 0, len(c.timers)
 	for i < j {
 		h := int(uint(i+j) >> 1) //nolint:gosec
