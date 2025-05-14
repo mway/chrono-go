@@ -1,16 +1,21 @@
-# Binaries for programs and plugins
+/*
+!.gitignore
+!.golangci.yml
+!.mise
+!*.go
+!ci/
+!go.mod
+!go.sum
+!justfile
+!LICENSE
+!Makefile
+.release/
+*.dll
+*.dylib
 *.exe
 *.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-cover.html
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
+*.so
+*.test
+attic/
+dist/

@@ -29,8 +29,8 @@ import (
 
 var _ Clock = (*ThrottledClock)(nil)
 
-// DefaultWallNanotimeFunc returns a new, default [NanotimeFunc] that reports wall
-// time as nanoseconds.
+// DefaultWallNanotimeFunc returns a new, default [NanotimeFunc] that reports
+// wall time as nanoseconds.
 func DefaultWallNanotimeFunc() NanotimeFunc {
 	return func() int64 {
 		return time.Now().UnixNano()
