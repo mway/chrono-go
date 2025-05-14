@@ -31,15 +31,16 @@ generate PKG="./...": deps
     go generate {{ PKG }}
 
 tmpl DST:
-	#!/usr/bin/env bash
-	paths=(
-		.github
-		.gitignore
-		.golangci.yml
-		.mise
-		justfile
-		LICENSE
-	)
-	for p in "${paths[@]}"; do
-		cp -R "$p" "{{ DST }}/${p}"
-	done
+    #!/usr/bin/env bash
+    paths=(
+        .github
+        .gitignore
+        .golangci.yml
+        .mise
+        justfile
+        LICENSE
+    )
+    for p in "${paths[@]}"; do
+        rm -rf "{{ DST }}/${p}"
+        cp -R "$p" "{{ DST }}/${p}"
+    done
