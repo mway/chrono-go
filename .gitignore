@@ -1,11 +1,14 @@
 /*
+!.github/
 !.gitignore
 !.golangci.yml
 !.mise
+!.mise/tasks
 !*.go
 !ci/
 !go.mod
 !go.sum
+!hk.pkl
 !justfile
 !LICENSE
 !Makefile

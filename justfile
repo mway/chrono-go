@@ -5,42 +5,33 @@ coverprofile := "cover.out"
 default:
     @just --list | grep -v default
 
-deps:
-    @mise install -q
+check:
+    mise run check
 
-test PKG="./..." *ARGS="": deps
-    go test -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
+cover: test
+    mise run cover
 
-vtest PKG="./..." *ARGS="": (test PKG ARGS "-v")
+fix:
+    mise run fix
 
-testsum PKG="./..." *ARGS="": deps
+test:
+    mise run test
+
+vtest PKG="./..." *ARGS="":
+    go test -race -failfast -count 1 -coverprofile {{ coverprofile }} -v {{ PKG }} {{ ARGS }}
+
+tests PKG="./..." *ARGS="":
     gotestsum -f dots -- -v -race -failfast -count 1 -coverprofile {{ coverprofile }} {{ PKG }} {{ ARGS }}
 
-cover PKG="./...": (test PKG)
-    go tool cover -html {{ coverprofile }}
+alias bench := benchmark
 
-alias benchmark := bench
-
-bench PKG="./..." *ARGS="": deps
+benchmark PKG="./..." *ARGS="":
     go test -v -count 1 -run x -bench . {{ PKG }} {{ ARGS }}
 
-lint *PKGS="./...": deps
+lint *PKGS="./...":
     golangci-lint run --new=false {{ PKGS }}
 
-generate PKG="./...": deps
+alias gen := generate
+    
+generate PKG="./...":
     go generate {{ PKG }}
-
-tmpl DST:
-    #!/usr/bin/env bash
-    paths=(
-        .github
-        .gitignore
-        .golangci.yml
-        .mise
-        justfile
-        LICENSE
-    )
-    for p in "${paths[@]}"; do
-        rm -rf "{{ DST }}/${p}"
-        cp -R "$p" "{{ DST }}/${p}"
-    done
