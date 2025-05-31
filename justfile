@@ -32,6 +32,6 @@ lint *PKGS="./...":
     golangci-lint run --new=false {{ PKGS }}
 
 alias gen := generate
-    
+
 generate PKG="./...":
     go generate {{ PKG }}
