@@ -1,8 +1,23 @@
 [tools]
+github-cli = "latest"
 go = "1.24"
+gofumpt = "latest"
 golangci-lint = "2"
-gopls = "latest"
+golangci-lint-langserver = "latest"
+golines = "latest"
 gotestsum = "latest"
+hk = "latest"
 just = "latest"
+pkl = "latest"
 
 "go:go.uber.org/mock/mockgen" = "latest"
+"go:golang.org/x/perf/cmd/benchstat" = "latest"
+"go:golang.org/x/tools/cmd/benchcmp" = "latest"
+"go:golang.org/x/tools/cmd/deadcode" = "latest"
+"go:golang.org/x/tools/cmd/goimports" = "latest"
+"go:golang.org/x/tools/gopls" = "latest"
+
+[[hooks.enter]]
+script = "mise install"
+[[hooks.enter]]
+script = "hk install"

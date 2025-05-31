@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+_main() {
+  local args=("./...")
+  if [[ $# -gt 0 ]]; then
+    args=("$@")
+  fi
+
+  golangci-lint run --fix --new=false "${args[@]}"
+}
+
+_main "$@"

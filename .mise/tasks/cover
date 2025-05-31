@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec go tool cover -html cover.out -o cover.html
