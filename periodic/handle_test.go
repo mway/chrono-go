@@ -237,12 +237,14 @@ func TestHandle_Run(t *testing.T) {
 
 	defer handle.Stop()
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		handle.Run()
 		clk.Add(time.Second)
 		requireRecvWithTimeout(t, called, time.Second)
 		requireRecvWithTimeout(t, called, time.Second)
-		require.EqualValues(t, (i+1)*2, calls.Load())
+		require.Eventually(t, func() bool {
+			return calls.Load() == int64((i+1)*2)
+		}, time.Second, time.Millisecond)
 	}
 }
 

@@ -3,7 +3,6 @@ module go.mway.dev/chrono
 go 1.24
 
 require (
-	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.9.0
 	go.mway.dev/math v0.3.3
 	go.mway.dev/x v0.0.0-20250512125622-3581d5394ae6

@@ -334,7 +334,7 @@ func TestFakeClock_Sleep(t *testing.T) {
 		clk.Sleep(time.Second)
 	}()
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		clk.Add(time.Second)
 		time.Sleep(time.Millisecond)
 	}
@@ -405,28 +405,27 @@ func TestFakeClock_InterleavedTimers(t *testing.T) {
 func TestFakeClock_ManyTimers(t *testing.T) {
 	var (
 		clk    = clock.NewFakeClock()
-		timers []*clock.Timer
+		timers = make([]*clock.Timer, 0, 5)
 	)
 
-	// for i := 0; i < 1<<10; i++ {
-	for i := 0; i < 5; i++ {
+	for range cap(timers) {
 		timers = append(timers, clk.NewTimer(time.Second))
 	}
 
 	for i := int64(0); i < 10; i++ {
-		for j := 0; j < len(timers); j++ {
+		for j := range timers {
 			requireNoTick(t, timers[j].C)
 		}
 
 		clk.Add(time.Second)
 
-		for j := 0; j < len(timers); j++ {
+		for j := range timers {
 			requireTick(t, timers[j].C)
 			require.False(t, timers[j].Reset(time.Second))
 		}
 	}
 
-	for j := 0; j < len(timers); j++ {
+	for j := range timers {
 		require.True(t, timers[j].Stop())
 		requireNoTick(t, timers[j].C)
 	}
@@ -456,7 +455,7 @@ func TestFakeClock_Timer_DoubleStop(t *testing.T) {
 			require.False(t, timer.Stop())
 		}
 
-		timers = nil
+		timers = timers[:0]
 	}
 }
 
@@ -491,19 +490,23 @@ func requireClockSince(
 }
 
 func requireClockIs(t *testing.T, expect int64, clk *clock.FakeClock) {
+	t.Helper()
 	requireTimeIs(t, expect, clk.Now())
 	requireNanotimeIs(t, expect, clk.Nanotime())
 }
 
 func requireNanotimeIs(t *testing.T, expect int64, ns int64) {
+	t.Helper()
 	require.Equal(t, expect, ns)
 }
 
 func requireTimeIs(t *testing.T, expect int64, ts time.Time) {
+	t.Helper()
 	require.EqualValues(t, expect, ts.UnixNano())
 }
 
 func requireTick(t *testing.T, ch <-chan time.Time) (ts time.Time) {
+	t.Helper()
 	select {
 	case ts = <-ch:
 	case <-time.After(time.Second):
@@ -513,6 +516,8 @@ func requireTick(t *testing.T, ch <-chan time.Time) (ts time.Time) {
 }
 
 func requireNoTick(t *testing.T, ch <-chan time.Time) {
+	t.Helper()
+
 	select {
 	case <-ch:
 		require.Fail(t, "unexpected tick")
@@ -521,6 +526,8 @@ func requireNoTick(t *testing.T, ch <-chan time.Time) {
 }
 
 func waitFor(t *testing.T, d time.Duration, f func() bool) {
+	t.Helper()
+
 	start := chrono.Nanotime()
 	for !f() {
 		if time.Duration(chrono.Nanotime()-start) >= d {
