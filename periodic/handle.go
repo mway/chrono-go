@@ -23,6 +23,7 @@ package periodic
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"time"
 
@@ -57,6 +58,10 @@ func StartWithContext(
 	fn Func,
 	opts ...StartOption,
 ) *Handle {
+	if fn == nil {
+		panic("nil periodic.Func provided")
+	}
+
 	var (
 		options      = defaultStartOptions().With(opts...)
 		hctx, cancel = context.WithCancel(ctx)
@@ -123,6 +128,7 @@ func (h *Handle) runLoop(period time.Duration, ready chan<- struct{}) {
 			}
 
 			h.RunWithContext(h.ctx)
+			runtime.Gosched()
 		}
 	}
 }

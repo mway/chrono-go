@@ -23,12 +23,18 @@ package clock
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
-// ErrNoClockFunc is returned when creating a new [Clock] without a valid
-// [TimeFunc] or [NanotimeFunc].
-var ErrNoClockFunc = errors.New("no clock function provided")
+var (
+	// ErrNoClockFunc is returned when creating a new [Clock] without a valid
+	// [TimeFunc] or [NanotimeFunc].
+	ErrNoClockFunc = errors.New("no clock function provided")
+
+	_ Clock = (*monotonicClock)(nil)
+	_ Clock = (*wallClock)(nil)
+)
 
 // A Clock tells time.
 type Clock interface {
@@ -72,7 +78,7 @@ type Clock interface {
 	// Now().Sub(t).
 	Since(t time.Time) time.Duration
 
-	// Since returns the time elapsed since ns. It is shorthand for
+	// SinceNanotime returns the time elapsed since ns. It is shorthand for
 	// Nanotime()-ns.
 	SinceNanotime(ns int64) time.Duration
 
@@ -106,9 +112,8 @@ func NewClock(opts ...Option) (Clock, error) {
 // given [Clock].
 func MustClock(clock Clock, err error) Clock {
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("clock.MustClock received an error: %w", err))
 	}
-
 	return clock
 }
 
@@ -120,4 +125,106 @@ func NewMonotonicClock() Clock {
 // NewWallClock returns a new wall [Clock].
 func NewWallClock() Clock {
 	return MustClock(NewClock(WithTimeFunc(DefaultTimeFunc())))
+}
+
+type monotonicClock struct {
+	baseClock
+
+	fn NanotimeFunc
+}
+
+func newMonotonicClock(fn NanotimeFunc) *monotonicClock {
+	return &monotonicClock{
+		fn: fn,
+	}
+}
+
+func (c *monotonicClock) Nanotime() int64 {
+	return c.fn()
+}
+
+func (c *monotonicClock) NewStopwatch() *Stopwatch {
+	return newStopwatch(c)
+}
+
+func (c *monotonicClock) Now() time.Time {
+	return time.Unix(0, c.fn())
+}
+
+func (c *monotonicClock) Since(t time.Time) time.Duration {
+	return c.SinceNanotime(t.UnixNano())
+}
+
+func (c *monotonicClock) SinceNanotime(ns int64) time.Duration {
+	return time.Duration(c.Nanotime() - ns)
+}
+
+type wallClock struct {
+	baseClock
+
+	fn TimeFunc
+}
+
+func newWallClock(fn TimeFunc) *wallClock {
+	return &wallClock{
+		fn: fn,
+	}
+}
+
+func (c *wallClock) Nanotime() int64 {
+	return c.fn().UnixNano()
+}
+
+func (c *wallClock) NewStopwatch() *Stopwatch {
+	return newStopwatch(c)
+}
+
+func (c *wallClock) Now() time.Time {
+	return c.fn()
+}
+
+func (c *wallClock) Since(t time.Time) time.Duration {
+	return c.SinceNanotime(t.UnixNano())
+}
+
+func (c *wallClock) SinceNanotime(ts int64) time.Duration {
+	return time.Duration(c.Nanotime() - ts)
+}
+
+type baseClock struct{}
+
+func (baseClock) After(d time.Duration) <-chan time.Time {
+	return time.After(d)
+}
+
+func (baseClock) AfterFunc(d time.Duration, fn func()) *Timer {
+	x := time.AfterFunc(d, fn)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
+}
+
+func (baseClock) NewTicker(d time.Duration) *Ticker {
+	ticker := time.NewTicker(d)
+	return &Ticker{
+		C:      ticker.C,
+		ticker: ticker,
+	}
+}
+
+func (baseClock) NewTimer(d time.Duration) *Timer {
+	x := time.NewTimer(d)
+	return &Timer{
+		C:     x.C,
+		timer: x,
+	}
+}
+
+func (baseClock) Sleep(d time.Duration) {
+	time.Sleep(d)
+}
+
+func (baseClock) Tick(d time.Duration) <-chan time.Time {
+	return time.Tick(d)
 }

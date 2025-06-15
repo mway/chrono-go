@@ -147,7 +147,7 @@ func (c *FakeClock) NewStopwatch() *Stopwatch {
 // equivalent to writing c.NewTicker(d).C(). The given duration must be greater
 // than 0.
 func (c *FakeClock) Tick(d time.Duration) <-chan time.Time {
-	if d < 0 {
+	if d <= 0 {
 		panic("non-positive interval for FakeClock.Tick")
 	}
 	return c.NewTicker(d).C
@@ -250,11 +250,6 @@ func (c *FakeClock) removeTimer(fake *fakeTimer) bool {
 	// Find a candidate timer's index based on the original expiration.
 	pos := c.insertPosNosync(fake.when)
 
-	// Pathological case: insertPosNosync will always return {0,2} for [2]
-	if pos > 0 && len(c.timers) == 2 {
-		pos--
-	}
-
 	// Ensure that this is the expected timer.
 	if pos >= len(c.timers) || c.timers[pos] != fake {
 		return false
@@ -272,14 +267,14 @@ func (c *FakeClock) insertPosNosync(when int64) int {
 	// Inline the stdlib search for parity.
 	i, j := 0, len(c.timers)
 	for i < j {
+		// TODO(mway): Benchmark vs `i+(j-i)/2`
 		h := int(uint(i+j) >> 1) //nolint:gosec
-		if cur := c.timers[i].when; cur >= 0 && cur < when {
+		if cur := c.timers[h].when; cur < 0 || cur >= 0 && cur < when {
 			i = h + 1
 		} else {
 			j = h
 		}
 	}
-
 	return i
 }
 

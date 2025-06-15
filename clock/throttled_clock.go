@@ -21,6 +21,7 @@
 package clock
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -40,6 +41,8 @@ func DefaultWallNanotimeFunc() NanotimeFunc {
 // ThrottledClock provides a simple interface to memoize repeated time syscalls
 // within a given threshold.
 type ThrottledClock struct {
+	baseClock
+
 	nowfn    NanotimeFunc
 	done     chan struct{}
 	now      atomic.Int64
@@ -59,6 +62,13 @@ func NewThrottledClock(
 	nowfn NanotimeFunc,
 	interval time.Duration,
 ) *ThrottledClock {
+	if interval <= 0 {
+		panic(fmt.Errorf(
+			"clock.NewThrottledClock: interval must be > 0 (got: %d)",
+			interval,
+		))
+	}
+
 	c := &ThrottledClock{
 		nowfn:    nowfn,
 		done:     make(chan struct{}),
@@ -123,27 +133,6 @@ func (c *ThrottledClock) NewStopwatch() *Stopwatch {
 	return newStopwatch(c)
 }
 
-// NewTicker returns a new Ticker that receives time ticks every d. This method
-// is not throttled and uses Go's runtime timers. If d is not greater than
-// zero, NewTicker will panic.
-func (c *ThrottledClock) NewTicker(d time.Duration) *Ticker {
-	x := time.NewTicker(d)
-	return &Ticker{
-		C:      x.C,
-		ticker: x,
-	}
-}
-
-// NewTimer returns a new Timer that receives a time tick after d. This method
-// is not throttled and uses Go's runtime timers.
-func (c *ThrottledClock) NewTimer(d time.Duration) *Timer {
-	x := time.NewTimer(d)
-	return &Timer{
-		C:     x.C,
-		timer: x,
-	}
-}
-
 // Now returns the current time as time.Time.
 func (c *ThrottledClock) Now() time.Time {
 	return time.Unix(0, c.now.Load())
@@ -161,12 +150,6 @@ func (c *ThrottledClock) SinceNanotime(ns int64) time.Duration {
 	return time.Duration(c.Nanotime() - ns)
 }
 
-// Sleep puts the current goroutine to sleep for d. This method is not
-// throttled and uses Go's runtime timers.
-func (c *ThrottledClock) Sleep(d time.Duration) {
-	time.Sleep(d)
-}
-
 // Stop stops the clock. Note that this has no effect on currently-running
 // timers.
 func (c *ThrottledClock) Stop() {
@@ -174,12 +157,6 @@ func (c *ThrottledClock) Stop() {
 		close(c.done)
 	}
 	c.wg.Wait()
-}
-
-// Tick returns a new channel that receives time ticks every d. It is
-// equivalent to writing c.NewTicker(d).C().
-func (c *ThrottledClock) Tick(d time.Duration) <-chan time.Time {
-	return time.Tick(d)
 }
 
 func (c *ThrottledClock) run(interval time.Duration) {

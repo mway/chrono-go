@@ -84,5 +84,8 @@ type Rate struct {
 
 // Per returns the rate's count over the given period of time.
 func (r Rate) Per(d time.Duration) float64 {
+	if r.elapsed == 0 {
+		return 0
+	}
 	return (float64(r.count) / float64(r.elapsed)) * float64(d)
 }
