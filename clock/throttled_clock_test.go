@@ -73,6 +73,15 @@ func TestThrottledClock_Constructors(t *testing.T) {
 	}
 }
 
+func TestNewThrottledClock_Panic(t *testing.T) {
+	require.Panics(t, func() {
+		clock.NewThrottledClock(nil, -1)
+	})
+	require.Panics(t, func() {
+		clock.NewThrottledClock(func() int64 { return 0 }, -1)
+	})
+}
+
 //nolint:gocyclo
 func TestThrottledClock_Timers(t *testing.T) {
 	clk := clock.NewThrottledClock(func() int64 { return 0 }, time.Minute)
